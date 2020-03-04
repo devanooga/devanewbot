@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using Microsoft.AspNetCore.Mvc;
 
 namespace devanewbot.Models.Commands
 {
