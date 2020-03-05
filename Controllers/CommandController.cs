@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using devanewbot.Models;
 using devanewbot.Models.Commands;
 using Flurl.Http;
@@ -19,16 +20,16 @@ namespace devanewbot.Controllers
         }
 
         [HttpPost]
-        public OkResult Spongebob(SpongebobCommand model)
+        public async Task<OkResult> Spongebob(SpongebobCommand model)
         {
             if (model.UserId != null && model.Token == _configuration["Secrets:SlackVerificationToken"])
             {
-                var slackUser = "https://slack.com/api/users.info"
+                var slackUser = await "https://slack.com/api/users.info"
                     .WithHeader("Authorization", "Bearer " + _configuration["Secrets:SlackOauthToken"])
                     .SetQueryParam("token", _configuration["Secrets:SlackOauthToken"])
                     .SetQueryParam("user", model.UserId) 
-                    .GetJsonAsync<SlackUser>().Result;
-                "https://slack.com/api/chat.postMessage"
+                    .GetJsonAsync<SlackUser>();
+                await "https://slack.com/api/chat.postMessage"
                     .WithHeader("Authorization", "Bearer " + _configuration["Secrets:SlackOauthToken"])
                     .PostJsonAsync(new {
                         channel = model.ChannelId,
