@@ -1,17 +1,35 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace devanewbot.Models.Commands
 {
     public class SlashCommand
     {
         public string Token { get; set; }
-        public string Team_Id { get; set; }
-        public string Team_Domain { get; set; }
-        public string Channel_Id { get; set; }
-        public string Channel_Name { get; set; }
-        public string User_Id { get; set; }
-        public string User_Name { get; set; }
-        public string Command { get; set; }
         public string Text { get; set; }
-        public string Response_Url { get; set; }
-        public string Trigger_Id { get; set; }
+        public string Command { get; set; }
+
+        [FromForm(Name = "teamId")]
+        public string TeamId { get; set; }
+
+        [FromForm(Name = "team_domain")]
+        public string TeamDomain { get; set; }
+
+        [FromForm(Name = "channel_id")]
+        public string ChannelId { get; set; }
+
+        [FromForm(Name = "channel_name")]
+        public string ChannelName { get; set; }
+
+        [FromForm(Name = "user_id")]
+        public string UserId { get; set; }
+
+        [FromForm(Name = "user_name")]
+        public string UserName { get; set; }
+
+        [FromForm(Name = "response_url")]
+        public string ResponseUrl { get; set; }
+
+        [FromForm(Name = "trigger_id")]
+        public string TriggerId { get; set; }
     }
 }

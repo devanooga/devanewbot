@@ -1,5 +1,3 @@
-using System;
-
 namespace devanewbot.Models
 {
     public class ErrorViewModel

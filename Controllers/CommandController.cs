@@ -21,17 +21,17 @@ namespace devanewbot.Controllers
         [HttpPost]
         public OkResult Spongebob(SpongebobCommand model)
         {
-            if (model.User_Id != null && model.Token == _configuration["Secrets:SlackVerificationToken"])
+            if (model.UserId != null && model.Token == _configuration["Secrets:SlackVerificationToken"])
             {
                 var slackUser = "https://slack.com/api/users.info"
                     .WithHeader("Authorization", "Bearer " + _configuration["Secrets:SlackOauthToken"])
                     .SetQueryParam("token", _configuration["Secrets:SlackOauthToken"])
-                    .SetQueryParam("user", model.User_Id) 
+                    .SetQueryParam("user", model.UserId) 
                     .GetJsonAsync<SlackUser>().Result;
                 "https://slack.com/api/chat.postMessage"
                     .WithHeader("Authorization", "Bearer " + _configuration["Secrets:SlackOauthToken"])
                     .PostJsonAsync(new {
-                        channel = model.Channel_Id,
+                        channel = model.ChannelId,
                         username = slackUser.User.Profile.DisplayName,
                         text = model.Response(),
                         icon_url = slackUser.User.Profile.ImageOriginal
