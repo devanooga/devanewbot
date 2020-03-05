@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace devanewbot.Models.Commands
 {
@@ -6,13 +7,21 @@ namespace devanewbot.Models.Commands
     {
         public string Response()
         {
+            // spONgEbOB cASe THE TexT
+            Text = new string(Text.Select(c => Spongebobify(c)).ToArray());
+
+            return $"{Text} :spongebobmock:";
+        }
+
+        /// <summary>
+        /// Takes char and randomly converts it to uppercase or lowercase
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
+        private char Spongebobify(char c)
+        {
             var rand = new Random();
-            var text = "";
-            foreach (var c in Text)
-            {
-                text += rand.Next(2) == 0 ? c.ToString().ToUpper() : c.ToString().ToLower();
-            }
-            return text + " :spongebobmock:";
+            return rand.Next(2) == 0 ? Char.ToUpper(c) : Char.ToLower(c);
         }
     }
 }
