@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace devanewbot.Models.Commands
+namespace SlackDotNet.Webhooks
 {
     public class SlashCommand
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using SlackDotNet.Webhooks;
 
 namespace devanewbot.Models.Commands
 {

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SlackAPI;
+using SlackDotNet;
 
 namespace devanewbot
 {
@@ -20,8 +20,12 @@ namespace devanewbot
         {
             services.AddControllersWithViews();
 
-            var slackTaskClient = new SlackTaskClient(Configuration["Secrets:SlackOauthToken"]);
-            services.AddSingleton<SlackTaskClient>(slackTaskClient);
+            var slackTaskClient = new Slack(
+                Configuration["Secrets:SlackOauthToken"],
+                Configuration["Secrets:SlackSigningSecret"],
+                Configuration["Secrets:SlackVerificationToken"]);
+
+            services.AddSingleton<Slack>(slackTaskClient);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
