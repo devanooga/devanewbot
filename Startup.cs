@@ -21,9 +21,9 @@ namespace devanewbot
             services.AddControllersWithViews();
 
             var slackTaskClient = new Slack(
-                Configuration["Secrets:SlackOauthToken"],
-                Configuration["Secrets:SlackSigningSecret"],
-                Configuration["Secrets:SlackVerificationToken"]);
+                Configuration["Slack:OauthToken"],
+                Configuration["Slack:SigningSecret"],
+                Configuration["Slack:VerificationToken"]);
 
             services.AddSingleton<Slack>(slackTaskClient);
         }
