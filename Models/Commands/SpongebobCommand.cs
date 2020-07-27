@@ -6,6 +6,8 @@ namespace devanewbot.Models.Commands
 {
     public class SpongebobCommand : SlashCommand
     {
+        private Random _random = new Random();
+
         public string Response()
         {
             // spONgEbOB cASe THE TexT
@@ -21,8 +23,7 @@ namespace devanewbot.Models.Commands
         /// <returns></returns>
         private char Spongebobify(char c)
         {
-            var rand = new Random();
-            return rand.Next(2) == 0 ? Char.ToUpper(c) : Char.ToLower(c);
+            return _random.Next(2) == 0 ? Char.ToUpper(c) : Char.ToLower(c);
         }
     }
 }
