@@ -24,7 +24,7 @@ namespace devanewbot.Controllers
             if (_slack.ValidWebhookMessage(model) && model.UserId != null)
             {
                 var slackUser = await _slack.GetUser(model.UserId);
-                await _slack.PostMessage(new ChatMessage{
+                await _slack.PostMessage(new ChatMessage {
                     Channel = model.ChannelId,
                     Username = slackUser.Profile.DisplayName,
                     Text = model.Response(),
@@ -32,6 +32,25 @@ namespace devanewbot.Controllers
                 });
             }
 
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<OkResult> Gif(GifCommand model)
+        {
+            model.Configuration = _configuration;
+
+            if (_slack.ValidWebhookMessage(model) && model.UserId != null)
+            {
+                var slackUser = await _slack.GetUser(model.UserId);
+                await _slack.PostMessage(new ChatMessage {
+                    Channel = model.ChannelId,
+                    Username = "gif-command",
+                    Text = await model.Response(),
+                    IconUrl = slackUser.Profile.ImageOriginal
+                });
+            }
+            
             return Ok();
         }
     }

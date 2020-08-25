@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace SlackDotNet.Webhooks
 {
@@ -31,5 +32,6 @@ namespace SlackDotNet.Webhooks
 
         [FromForm(Name = "trigger_id")]
         public string TriggerId { get; set; }
+        public IConfiguration? Configuration { get; set; }
     }
 }
