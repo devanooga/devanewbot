@@ -5,6 +5,7 @@ using Flurl.Http;
 using System.Threading.Tasks;
 using SlackDotNet.Payloads;
 using SlackDotNet;
+using System;
 
 namespace devanewbot.Services
 {
@@ -25,13 +26,26 @@ namespace devanewbot.Services
         protected override async Task HandleMessage(WebhookMessage webhookMessage)
         {
             var slackUser = await Slack.GetUser(webhookMessage.UserId);
-            await Slack.PostMessage(new ChatMessage
+            try {
+                await Slack.PostMessage(new ChatMessage
+                {
+                    Channel = webhookMessage.ChannelId,
+                    Username = slackUser.Profile.DisplayName,
+                    Text = await Response(webhookMessage),
+                    IconUrl = slackUser.Profile.ImageOriginal
+                });
+            }
+            catch (ArgumentOutOfRangeException)
             {
-                Channel = webhookMessage.ChannelId,
-                Username = slackUser.Profile.DisplayName,
-                Text = await Response(webhookMessage),
-                IconUrl = slackUser.Profile.ImageOriginal
-            });
+                await Slack.PostMessage(new ChatMessage
+                {
+                    Channel = webhookMessage.ChannelId,
+                    Username = "devanewbot",
+                    Text = "Sorry, I couldn't find a result for that request. Try again.",
+                    IconUrl = BotImageUrl,
+                    User = slackUser.Id
+                }, true);
+            }
         }
 
         public async Task<string> Response(WebhookMessage webhookMessage)

@@ -104,5 +104,12 @@ namespace SlackDotNet.Payloads
         /// <value></value>
         [JsonProperty("username")]
         public string Username { get; set; }
+
+        /// <summary>
+        /// Used for Ephemeral messages. User to direct message to.
+        /// </summary>
+        /// <value></value>
+        [JsonProperty("user")]
+        public string User { get; set; }
     }
 }

@@ -51,9 +51,10 @@ namespace SlackDotNet
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public async Task<bool> PostMessage(ChatMessage message)
+        public async Task<bool> PostMessage(ChatMessage message, bool ephemeral = false)
         {
-            var response = await "https://slack.com/api/chat.postMessage"
+            var endpoint = ephemeral ? "Ephemeral" : "Message";
+            var response = await $"https://slack.com/api/chat.post{endpoint}"
                 .WithHeader("Authorization", "Bearer " + OauthToken)
                 .PostJsonAsync(message);
 
