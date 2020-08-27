@@ -1,3 +1,4 @@
+using devanewbot.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,8 @@ namespace devanewbot
                 Configuration["Slack:VerificationToken"]);
 
             services.AddSingleton<Slack>(slackTaskClient);
+            services.AddSingleton<SpongebobCommand>();
+            services.AddSingleton<GifCommand>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

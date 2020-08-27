@@ -1,56 +1,32 @@
-using devanewbot.Models.Commands;
+using devanewbot.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using SlackDotNet;
-using SlackDotNet.Payloads;
+using SlackDotNet.Webhooks;
 using System.Threading.Tasks;
 
 namespace devanewbot.Controllers
 {
     public class CommandController : ControllerBase
     {
-        private Slack _slack { get; set; }
-        private IConfiguration _configuration { get; set; }
+        private readonly SpongebobCommand SpongebobCommand;
+        private readonly GifCommand GifCommand;
 
-        public CommandController(Slack slack, IConfiguration configuration)
+        public CommandController(SpongebobCommand spongebobCommand, GifCommand gifCommand)
         {
-            _slack = slack;
-            _configuration = configuration;
+            SpongebobCommand = spongebobCommand;
+            GifCommand = gifCommand;
         }
 
         [HttpPost]
-        public async Task<OkResult> Spongebob(SpongebobCommand model)
+        public async Task<OkResult> Spongebob(WebhookMessage webhookMessage)
         {
-            if (_slack.ValidWebhookMessage(model) && model.UserId != null)
-            {
-                var slackUser = await _slack.GetUser(model.UserId);
-                await _slack.PostMessage(new ChatMessage {
-                    Channel = model.ChannelId,
-                    Username = slackUser.Profile.DisplayName,
-                    Text = model.Response(),
-                    IconUrl = slackUser.Profile.ImageOriginal
-                });
-            }
-
+            await SpongebobCommand.ExecuteAsync(webhookMessage);
             return Ok();
         }
 
         [HttpPost]
-        public async Task<OkResult> Gif(GifCommand model)
+        public async Task<OkResult> Gif(WebhookMessage webhookMessage)
         {
-            model.Configuration = _configuration;
-
-            if (_slack.ValidWebhookMessage(model) && model.UserId != null)
-            {
-                var slackUser = await _slack.GetUser(model.UserId);
-                await _slack.PostMessage(new ChatMessage {
-                    Channel = model.ChannelId,
-                    Username = "gif-command",
-                    Text = await model.Response(),
-                    IconUrl = slackUser.Profile.ImageOriginal
-                });
-            }
-            
+            await GifCommand.ExecuteAsync(webhookMessage);
             return Ok();
         }
     }
