@@ -16,6 +16,12 @@ namespace devanewbot.Services
         {
         }
 
+        /// <summary>
+        /// Sends a spongebobified message to Slack as the user that requested.
+        /// </summary>
+        /// <param name="webhookMessage"></param>
+        /// <seealso cref="Command.HandleMessage(WebhookMessage)"/>
+        /// <returns></returns>
         protected override async Task HandleMessage(WebhookMessage webhookMessage)
         {
             var slackUser = await Slack.GetUser(webhookMessage.UserId);

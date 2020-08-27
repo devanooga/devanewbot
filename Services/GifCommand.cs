@@ -16,6 +16,12 @@ namespace devanewbot.Services
 
         private string SearchUri { get; set; } = "https://api.cognitive.microsoft.com/bing/v7.0/images/search";
 
+        /// <summary>
+        /// Sends a gif to Slack as the user that requested the gif.
+        /// </summary>
+        /// <param name="webhookMessage"></param>
+        /// <seealso cref="Command.HandleMessage(WebhookMessage)"/>
+        /// <returns></returns>
         protected override async Task HandleMessage(WebhookMessage webhookMessage)
         {
             var slackUser = await Slack.GetUser(webhookMessage.UserId);
