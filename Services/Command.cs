@@ -13,12 +13,13 @@ namespace devanewbot.Services
     {
         public readonly Slack Slack;
         public readonly IConfiguration Configuration;
-        public readonly Uri BotImageUrl = new Uri("https://ca.slack-edge.com/T3WU74872-USLACKBOT-sv41d8cd98f0-512");
+        public readonly Uri BotImageUrl; 
 
         public Command(Slack slack, IConfiguration configuration)
         {
             Slack = slack;
             Configuration = configuration;
+            BotImageUrl = new Uri(configuration["BotImageUrl"]);
         }
 
         /// <summary>
