@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using SlackDotNet;
@@ -12,6 +13,7 @@ namespace devanewbot.Services
     {
         public readonly Slack Slack;
         public readonly IConfiguration Configuration;
+        public readonly Uri BotImageUrl = new Uri("https://ca.slack-edge.com/T3WU74872-USLACKBOT-sv41d8cd98f0-512");
 
         public Command(Slack slack, IConfiguration configuration)
         {
