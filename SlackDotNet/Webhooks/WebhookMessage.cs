@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace SlackDotNet.Webhooks
 {
-    public class SlashCommand
+    public class WebhookMessage
     {
         public string Token { get; set; }
         public string Text { get; set; }
@@ -32,6 +32,5 @@ namespace SlackDotNet.Webhooks
 
         [FromForm(Name = "trigger_id")]
         public string TriggerId { get; set; }
-        public IConfiguration? Configuration { get; set; }
     }
 }

@@ -26,7 +26,7 @@ namespace SlackDotNet
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public bool ValidWebhookMessage(SlashCommand model)
+        public bool ValidWebhookMessage(WebhookMessage model)
         {
             return model.Token == VerificationToken;
         }
