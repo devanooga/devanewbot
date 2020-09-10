@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 
 namespace SlackDotNet.Payloads
 {
@@ -104,5 +105,19 @@ namespace SlackDotNet.Payloads
         /// <value></value>
         [JsonProperty("username")]
         public string Username { get; set; }
+
+        /// <summary>
+        /// Message attachments
+        /// </summary>
+        /// <value></value>
+        [JsonProperty("attachments")]
+        public List<ChatAttachment> Attachments { get; set; }
+
+        /// <summary>
+        /// User ID to receive the message (used for ephemeral messages)
+        /// </summary>
+        /// <value></value>
+        [JsonProperty("user")]
+        public string User { get; set; }
     }
 }
