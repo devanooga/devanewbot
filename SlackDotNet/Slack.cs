@@ -51,11 +51,29 @@ namespace SlackDotNet
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public async Task<bool> PostMessage(ChatMessage message)
+        public async Task<bool> PostMessage(ChatMessage message, bool ephemeral = false)
         {
-            var response = await "https://slack.com/api/chat.postMessage"
+            var endpoint = ephemeral ? "postEphemeral" : "postMessage";
+            var response = await $"https://slack.com/api/chat.{endpoint}"
                 .WithHeader("Authorization", "Bearer " + OauthToken)
                 .PostJsonAsync(message);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes a message in response to an interactive command
+        /// </summary>
+        /// <param name="responseUrl"></param>
+        /// <returns></returns>
+        public async Task<bool> DeleteResponse(string responseUrl)
+        {
+            var response = await responseUrl
+                .WithHeader("Authorization", "Bearer " + OauthToken)
+                .PostJsonAsync(new
+                {
+                    delete_original = true
+                });
 
             return true;
         }
