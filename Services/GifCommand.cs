@@ -143,7 +143,7 @@ namespace devanewbot.Services
                             {
                                 Type = "button",
                                 Name = "random",
-                                Text = "Hit me again!",
+                                Text = "Hit me baby one more time!",
                                 Value = text,
                             },
                             new ChatAction
