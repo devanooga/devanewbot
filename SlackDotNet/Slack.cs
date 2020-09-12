@@ -32,6 +32,17 @@ namespace SlackDotNet
         }
 
         /// <summary>
+        /// Verifies the authenticity of an interactive message from Slack.
+        /// Should be used before acting on an interactive message.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool ValidInteractiveMessage(InteractiveMessage model)
+        {
+            return model.Token == VerificationToken;
+        }
+
+        /// <summary>
         /// Get's a slack user's information
         /// </summary>
         /// <param name="userId"></param>
