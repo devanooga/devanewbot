@@ -10,11 +10,13 @@ namespace devanewbot.Controllers
     {
         private readonly SpongebobCommand SpongebobCommand;
         private readonly GifCommand GifCommand;
+        private readonly StallmanCommand StallmanCommand;
 
-        public CommandController(SpongebobCommand spongebobCommand, GifCommand gifCommand)
+        public CommandController(SpongebobCommand spongebobCommand, GifCommand gifCommand, StallmanCommand stallmanCommand)
         {
             SpongebobCommand = spongebobCommand;
             GifCommand = gifCommand;
+            StallmanCommand = stallmanCommand;
         }
 
         [HttpPost]
