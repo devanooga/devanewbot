@@ -32,6 +32,13 @@ namespace devanewbot.Controllers
         }
 
         [HttpPost]
+        public async Task<OkResult> Stallman(WebhookMessage webhookMessage)
+        {
+            await StallmanCommand.ExecuteAsync(webhookMessage);
+            return Ok();
+        }
+
+        [HttpPost]
         public async Task<OkResult> Interactive(string payload)
         {
             var interactiveMessage = JsonConvert.DeserializeObject<InteractiveMessage>(payload);
