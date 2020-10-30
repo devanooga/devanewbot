@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading.Tasks;
-using Flurl.Http;
+using HtmlAgilityPack;
 using Microsoft.Extensions.Configuration;
 using SlackDotNet;
 using SlackDotNet.Payloads;
@@ -32,59 +31,28 @@ namespace devanewbot.Services
             {
                 Channel = webhookMessage.ChannelId,
                 Username = slackUser.Profile.DisplayName,
-                Text = await ResponseAsync(webhookMessage.Text),
+                Text = ResponseAsync(webhookMessage.Text),
                 IconUrl = slackUser.Profile.ImageOriginal
             });
         }
 
-        public async Task<string> ResponseAsync(string text)
+        public string ResponseAsync(string text)
         {
             // Download the gallery page and get random link
-            var galleryPage = await Gallery.GetStringAsync();
-            var link = GetRandomLink(galleryPage);
+            var galleryPage = new HtmlWeb().Load(Gallery);
+            var links = galleryPage.DocumentNode
+                    .SelectNodes("//p[2]/a");
+            var link = Gallery + links[Random.Next(links.Count)]
+                    .Attributes["href"].Value;
 
             // Download the resulting page and get random image link
-            var imagePage = await link.GetStringAsync();
-            var imageLink = GetRandomLink(imagePage, true);
+            var imagePage = new HtmlWeb().Load(link);
 
-            return imageLink;
-        }
-
-        /// <summary>
-        /// Gets a random link from a page. If `image` is true, it searches for image links
-        /// </summary>
-        /// <param name="page"></param>
-        /// <param name="image"></param>
-        /// <returns></returns>
-        public string GetRandomLink(string page, bool image = false)
-        {
-            var links = new List<string>();
-            var lines = page.Split("\n");
-            Regex linkRegex;
-            if (image)
-            {
-                linkRegex = new Regex("<a href=\"(.*)\"><img src");
-            }
-            else
-            {
-                linkRegex = new Regex("<a href=\"(pages.*html)\"");
-            }
-
-            foreach (var line in lines)
-            {
-                var matches = linkRegex.Match(line);
-                if (matches.Success)
-                {
-                    links.Add(matches.Groups[1].Value);
-                }
-            }
-
-            if (image)
-            {
-                return Gallery + links[0].Substring(3);
-            }
-
-            return Gallery + links[Random.Next(links.Count)];
+            return Gallery + imagePage.DocumentNode
+                    .SelectNodes("//p[2]/a/img")
+                    .First()
+                    .GetAttributeValue("src", "")
+                    .Substring(3);
         }
     }
 }
