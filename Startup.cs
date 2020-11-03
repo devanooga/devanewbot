@@ -29,6 +29,7 @@ namespace devanewbot
             services.AddSingleton<Slack>(slackTaskClient);
             services.AddSingleton<SpongebobCommand>();
             services.AddSingleton<GifCommand>();
+            services.AddSingleton<StallmanCommand>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

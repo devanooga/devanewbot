@@ -10,11 +10,13 @@ namespace devanewbot.Controllers
     {
         private readonly SpongebobCommand SpongebobCommand;
         private readonly GifCommand GifCommand;
+        private readonly StallmanCommand StallmanCommand;
 
-        public CommandController(SpongebobCommand spongebobCommand, GifCommand gifCommand)
+        public CommandController(SpongebobCommand spongebobCommand, GifCommand gifCommand, StallmanCommand stallmanCommand)
         {
             SpongebobCommand = spongebobCommand;
             GifCommand = gifCommand;
+            StallmanCommand = stallmanCommand;
         }
 
         [HttpPost]
@@ -28,6 +30,13 @@ namespace devanewbot.Controllers
         public async Task<OkResult> Gif(WebhookMessage webhookMessage)
         {
             await GifCommand.ExecuteAsync(webhookMessage);
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<OkResult> Stallman(WebhookMessage webhookMessage)
+        {
+            await StallmanCommand.ExecuteAsync(webhookMessage);
             return Ok();
         }
 
