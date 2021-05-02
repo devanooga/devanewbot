@@ -30,6 +30,7 @@ namespace devanewbot
             services.AddSingleton<SpongebobCommand>();
             services.AddSingleton<GifCommand>();
             services.AddSingleton<StallmanCommand>();
+            services.AddHostedService<PropogationService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
