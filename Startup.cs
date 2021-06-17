@@ -1,3 +1,4 @@
+using devanewbot.Authorization;
 using devanewbot.Services;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -50,6 +51,7 @@ namespace devanewbot
             app.UseHangfireServer();
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
+                Authorization = new[] { new HangfireAuthorizationFilter() },
                 DisplayStorageConnectionString = false
             });
             app.UseStaticFiles();
