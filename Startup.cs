@@ -31,7 +31,7 @@ namespace devanewbot
             services.AddSingleton<SpongebobCommand>();
             services.AddSingleton<GifCommand>();
             services.AddSingleton<StallmanCommand>();
-            services.AddHangfire(config => config.UseRedisStorage("Redis"));
+            services.AddHangfire(config => config.UseRedisStorage(Configuration.GetConnectionString("Redis")));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
