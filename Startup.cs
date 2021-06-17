@@ -1,4 +1,5 @@
 using devanewbot.Services;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +31,7 @@ namespace devanewbot
             services.AddSingleton<SpongebobCommand>();
             services.AddSingleton<GifCommand>();
             services.AddSingleton<StallmanCommand>();
-            services.AddHostedService<PropogationService>();
+            services.AddHangfire(config => config.UseRedisStorage("Redis"));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -46,6 +47,11 @@ namespace devanewbot
                 app.UseHsts();
                 app.UseHttpsRedirection();
             }
+            app.UseHangfireServer();
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                DisplayStorageConnectionString = false
+            });
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -58,6 +64,8 @@ namespace devanewbot
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            RecurringJob.AddOrUpdate<PropagationService>(p => p.PostMessage(), "* 9 * * *", System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         }
     }
 }
