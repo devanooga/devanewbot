@@ -67,7 +67,7 @@ namespace devanewbot
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            RecurringJob.AddOrUpdate<PropagationService>(p => p.PostMessage(), "* 9 * * *", System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            RecurringJob.AddOrUpdate<PropagationService>(p => p.PostMessage(), "0 9 * * *", System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         }
     }
 }
