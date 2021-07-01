@@ -1,5 +1,6 @@
 namespace devanewbot.Services
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace devanewbot.Services
 
         public async Task PostMessage()
         {
+            var timeStamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var message = new ChatMessage()
             {
                 Channel = ChannelId,
@@ -30,7 +32,7 @@ namespace devanewbot.Services
                 {
                     new ChatAttachment
                     {
-                        ImageUrl = Report
+                        ImageUrl = $"{Report}?{timeStamp}"
                     }
                 }
             };
