@@ -53,7 +53,7 @@ namespace SlackDotNet
                 .SetQueryParam("token", OauthToken)
                 .SetQueryParam("user", userId)
                 .GetJsonAsync<Response>();
-            
+
             return response.User;
         }
 

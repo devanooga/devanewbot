@@ -41,6 +41,7 @@ namespace devanewbot
             services.AddHangfire(config => config.UseRedisStorage(Configuration.GetConnectionString("Redis")));
         }
 
+        [System.Obsolete]
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Client client)
         {
             Client = client;

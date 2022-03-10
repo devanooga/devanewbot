@@ -31,7 +31,7 @@ namespace SlackDotNet.Payloads
         /// <value></value>
         [JsonProperty("as_user")]
         public bool? AsUser { get; set; } = null;
-        
+
         /// <summary>
         /// Emoji to use as the icon for this message. Overrides IconUrl.
         /// Must be used in conjunction with AsUser set to `false`, otherwise ignored. 
