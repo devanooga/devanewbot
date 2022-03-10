@@ -1,5 +1,7 @@
+using System.Threading.Tasks;
 using devanewbot.Authorization;
 using devanewbot.Services;
+using Devanewbot.Discord;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -19,6 +21,8 @@ namespace devanewbot
 
         public IConfiguration Configuration { get; }
 
+        public Client Client { get; protected set; }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
@@ -32,11 +36,15 @@ namespace devanewbot
             services.AddSingleton<SpongebobCommand>();
             services.AddSingleton<GifCommand>();
             services.AddSingleton<StallmanCommand>();
+            services.AddSingleton<Client>();
+            services.Configure<DiscordOptions>(o => Configuration.GetSection("Discord").Bind(o));
             services.AddHangfire(config => config.UseRedisStorage(Configuration.GetConnectionString("Redis")));
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Client client)
         {
+            Client = client;
+            Task.Run(() => client.Start());
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

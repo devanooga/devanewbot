@@ -14,13 +14,20 @@ namespace devanewbot
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
+            WebHost
+                .CreateDefaultBuilder(args)
                 .UseConfiguration(new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddCommandLine(args)
-                    .AddJsonFile("appsettings.local.json", true, true)
                     .Build()
                 )
+                .ConfigureAppConfiguration((builderContext, config) =>
+                {
+                    config
+                        .AddJsonFile("appsettings.json")
+                        .AddJsonFile("appsettings.local.json", optional: true)
+                        .AddEnvironmentVariables();
+                })
                 .UseStartup<Startup>();
     }
 }
