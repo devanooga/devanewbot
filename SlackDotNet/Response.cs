@@ -1,8 +1,8 @@
-using Newtonsoft.Json;
-using SlackDotNet.Responses;
-
 namespace SlackDotNet
 {
+    using Newtonsoft.Json;
+    using SlackDotNet.Responses;
+
     public class Response
     {
         [JsonProperty("ok")]

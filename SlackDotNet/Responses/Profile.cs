@@ -1,8 +1,8 @@
-using Newtonsoft.Json;
-using System;
-
 namespace SlackDotNet.Responses
 {
+    using Newtonsoft.Json;
+    using System;
+
     public class Profile
     {
         [JsonProperty("avatar_hash")]

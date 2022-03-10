@@ -1,9 +1,8 @@
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-
 namespace SlackDotNet.Payloads
 {
+    using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class ChatMessage : Payload

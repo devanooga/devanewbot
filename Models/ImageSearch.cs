@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
-
 namespace devanewbot.Models
 {
+    using System;
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+
     public class ImageSearch
     {
         [JsonProperty("_type")]

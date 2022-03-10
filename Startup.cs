@@ -1,17 +1,17 @@
-using System.Threading.Tasks;
-using devanewbot.Authorization;
-using devanewbot.Services;
-using Devanewbot.Discord;
-using Hangfire;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using SlackDotNet;
-
 namespace devanewbot
 {
+    using System.Threading.Tasks;
+    using devanewbot.Authorization;
+    using devanewbot.Services;
+    using Devanewbot.Discord;
+    using Hangfire;
+    using Microsoft.AspNetCore.Builder;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
+    using SlackDotNet;
+
     public class Startup
     {
         public Startup(IConfiguration configuration)

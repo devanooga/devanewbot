@@ -1,7 +1,7 @@
-using Newtonsoft.Json;
-
 namespace SlackDotNet.Responses
 {
+    using Newtonsoft.Json;
+
     public class User
     {
         [JsonProperty("id")]

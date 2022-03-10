@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
-using SlackDotNet.Payloads;
-
 namespace SlackDotNet.Webhooks
 {
+    using System;
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+    using SlackDotNet.Payloads;
+
     public class InteractiveMessage
     {
         [JsonProperty("type")]

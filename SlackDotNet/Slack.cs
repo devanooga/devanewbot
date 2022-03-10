@@ -1,12 +1,12 @@
-using Flurl;
-using Flurl.Http;
-using SlackDotNet.Webhooks;
-using SlackDotNet.Responses;
-using SlackDotNet.Payloads;
-using System.Threading.Tasks;
-
 namespace SlackDotNet
 {
+    using Flurl;
+    using Flurl.Http;
+    using SlackDotNet.Webhooks;
+    using SlackDotNet.Responses;
+    using SlackDotNet.Payloads;
+    using System.Threading.Tasks;
+
     public class Slack
     {
         private string OauthToken { get; set; }

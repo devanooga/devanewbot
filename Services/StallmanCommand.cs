@@ -1,14 +1,14 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using HtmlAgilityPack;
-using Microsoft.Extensions.Configuration;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-using SlackDotNet.Webhooks;
-
 namespace devanewbot.Services
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using HtmlAgilityPack;
+    using Microsoft.Extensions.Configuration;
+    using SlackDotNet;
+    using SlackDotNet.Payloads;
+    using SlackDotNet.Webhooks;
+
     public class StallmanCommand : Command
     {
         private Random Random = new Random();

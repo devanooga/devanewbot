@@ -1,10 +1,10 @@
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using SlackDotNet;
-using SlackDotNet.Webhooks;
-
 namespace devanewbot.Services
 {
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Configuration;
+    using SlackDotNet;
+    using SlackDotNet.Webhooks;
+
     /// <summary>
     /// Abstract class for all /slashCommands
     /// </summary>

@@ -1,11 +1,11 @@
-using devanewbot.Services;
-using Microsoft.AspNetCore.Mvc;
-using SlackDotNet.Webhooks;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-
 namespace devanewbot.Controllers
 {
+    using devanewbot.Services;
+    using Microsoft.AspNetCore.Mvc;
+    using SlackDotNet.Webhooks;
+    using System.Threading.Tasks;
+    using Newtonsoft.Json;
+
     public class CommandController : ControllerBase
     {
         private readonly SpongebobCommand SpongebobCommand;

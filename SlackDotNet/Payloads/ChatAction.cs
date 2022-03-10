@@ -1,7 +1,7 @@
-using Newtonsoft.Json;
-
 namespace SlackDotNet.Payloads
 {
+    using Newtonsoft.Json;
+
     public class ChatAction
     {
         [JsonProperty("name")]

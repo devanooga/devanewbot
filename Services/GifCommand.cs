@@ -1,17 +1,16 @@
-using devanewbot.Models;
-using Microsoft.Extensions.Configuration;
-using SlackDotNet.Webhooks;
-using Flurl;
-using Flurl.Http;
-using System.Threading.Tasks;
-using SlackDotNet.Payloads;
-using SlackDotNet;
-using System.Collections.Generic;
-using System;
-using System.Linq;
-
 namespace devanewbot.Services
 {
+    using devanewbot.Models;
+    using Microsoft.Extensions.Configuration;
+    using SlackDotNet.Webhooks;
+    using Flurl;
+    using Flurl.Http;
+    using System.Threading.Tasks;
+    using SlackDotNet.Payloads;
+    using SlackDotNet;
+    using System.Collections.Generic;
+    using System;
+
     public class GifCommand : Command
     {
         private Random Random = new Random();

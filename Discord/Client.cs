@@ -1,14 +1,13 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord.Rest;
-using Discord.WebSocket;
-using Microsoft.Extensions.Options;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-
 namespace Devanewbot.Discord
 {
+    using System;
+    using System.Threading.Tasks;
+    using global::Discord.Rest;
+    using global::Discord.WebSocket;
+    using Microsoft.Extensions.Options;
+    using SlackDotNet;
+    using SlackDotNet.Payloads;
+
     public class Client : IDisposable
     {
         protected DiscordSocketClient SocketClient { get; }

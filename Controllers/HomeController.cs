@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using devanewbot.Models;
-
 namespace devanewbot.Controllers
 {
+    using System.Diagnostics;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Logging;
+    using devanewbot.Models;
+
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

@@ -1,13 +1,13 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-using SlackDotNet.Webhooks;
-
 namespace devanewbot.Services
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Configuration;
+    using SlackDotNet;
+    using SlackDotNet.Payloads;
+    using SlackDotNet.Webhooks;
+
     public class SpongebobCommand : Command
     {
         private Random Random = new Random();

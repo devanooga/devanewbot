@@ -1,7 +1,7 @@
-using Newtonsoft.Json;
-
 namespace SlackDotNet.Webhooks
 {
+    using Newtonsoft.Json;
+
     public class InteractiveAttribute
     {
         [JsonProperty("id")]

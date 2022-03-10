@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-
 namespace SlackDotNet.Webhooks
 {
+    using Microsoft.AspNetCore.Mvc;
+
     public class WebhookMessage
     {
         public string Token { get; set; }

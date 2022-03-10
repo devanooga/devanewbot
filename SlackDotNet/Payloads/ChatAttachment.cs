@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using Newtonsoft.Json;
-
 namespace SlackDotNet.Payloads
 {
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+
     public class ChatAttachment
     {
         [JsonProperty("text")]

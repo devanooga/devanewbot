@@ -1,8 +1,8 @@
-using System;
-using Newtonsoft.Json;
-
 namespace devanewbot.Models
 {
+    using System;
+    using Newtonsoft.Json;
+
     public class ImageSearchValue
     {
         [JsonProperty("name")]
