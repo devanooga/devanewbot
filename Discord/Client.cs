@@ -62,7 +62,7 @@ namespace Devanewbot.Discord
             var message = new ChatMessage()
             {
                 Channel = ChannelId,
-                Text = @$"Discord user ""{user.DisplayName}"" has {action} voice channel #{channel.Name}"
+                Text = @$"{user.DisplayName} has {action} #{channel.Name}"
             };
 
             await Slack.PostMessage(message);
