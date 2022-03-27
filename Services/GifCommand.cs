@@ -70,7 +70,7 @@ public class GifCommand : Command
     /// </summary>
     /// <param name="interactiveMessage"></param>
     /// <returns></returns>
-    public override async Task HandleInteractive(InteractiveMessage interactiveMessage)
+    protected override async Task HandleInteractive(InteractiveMessage interactiveMessage)
     {
         if (Slack.ValidInteractiveMessage(interactiveMessage))
         {

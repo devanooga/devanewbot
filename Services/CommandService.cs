@@ -29,13 +29,13 @@ public class CommandService : ICommandService
 
         var command = Commands.Find((c) => c.CommandText == messageCommand);
 
-        await command.ExecuteAsync(message);
+        await command.Execute(message);
     }
 
     public async Task HandleInteractive(InteractiveMessage message)
     {
         var command = Commands.Find((c) => c.CommandText == message.CallbackId);
 
-        await command.HandleInteractive(message);
+        await command.ExecuteInteractive(message);
     }
 }

@@ -39,9 +39,19 @@ public abstract class Command
     /// </summary>
     /// <param name="interactiveMessage"></param>
     /// <returns></returns>
-    public virtual async Task HandleInteractive(InteractiveMessage interactiveMessage)
+    protected virtual async Task HandleInteractive(InteractiveMessage interactiveMessage)
     {
-        Logger.LogWarning("HandleInteractive called on a non-interactive command");
+        await Task.Run(() => Logger.LogWarning("HandleInteractive called on a non-interactive command"));
+    }
+
+    /// <summary>
+    /// Public interface for running command's interactive task.
+    /// </summary>
+    /// <param name="interactiveMessage"></param>
+    /// <returns></returns>
+    public async Task ExecuteInteractive(InteractiveMessage interactiveMessage)
+    {
+        await HandleInteractive(interactiveMessage);
     }
 
     /// <summary>
@@ -51,9 +61,8 @@ public abstract class Command
     /// </summary>
     /// <param name="webhookMessage"></param>
     /// <returns></returns>
-    public async Task<bool> ExecuteAsync(WebhookMessage webhookMessage)
+    public async Task Execute(WebhookMessage webhookMessage)
     {
         await HandleMessage(webhookMessage);
-        return true;
     }
 }
