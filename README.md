@@ -2,7 +2,7 @@
 
 Rewrite of devanoobot in C#
 
-## local
+## Local Development
 
 1. Clone this repo
 2. Go to "Your Apps" on the [Slack API site](https://api.slack.com/apps)
