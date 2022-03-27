@@ -1,20 +1,19 @@
-namespace SlackDotNet.Payloads
+namespace SlackDotNet.Payloads;
+
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+public class ChatAttachment
 {
-    using System.Collections.Generic;
-    using Newtonsoft.Json;
+    [JsonProperty("text")]
+    public string Text { get; set; }
 
-    public class ChatAttachment
-    {
-        [JsonProperty("text")]
-        public string Text { get; set; }
+    [JsonProperty("callback_id")]
+    public string CallbackId { get; set; }
 
-        [JsonProperty("callback_id")]
-        public string CallbackId { get; set; }
+    [JsonProperty("image_url")]
+    public string ImageUrl { get; set; }
 
-        [JsonProperty("image_url")]
-        public string ImageUrl { get; set; }
-
-        [JsonProperty("actions")]
-        public List<ChatAction> Actions { get; set; }
-    }
+    [JsonProperty("actions")]
+    public List<ChatAction> Actions { get; set; }
 }

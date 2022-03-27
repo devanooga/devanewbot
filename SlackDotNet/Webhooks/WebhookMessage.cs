@@ -1,4 +1,5 @@
 namespace SlackDotNet.Webhooks;
+
 using System;
 using System.Text.Json.Serialization;
 
