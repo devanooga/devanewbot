@@ -1,22 +1,21 @@
-namespace SlackDotNet.Payloads
+namespace SlackDotNet.Payloads;
+
+using Newtonsoft.Json;
+
+public class ChatAction
 {
-    using Newtonsoft.Json;
+    [JsonProperty("name")]
+    public string Name { get; set; }
 
-    public class ChatAction
-    {
-        [JsonProperty("name")]
-        public string Name { get; set; }
+    [JsonProperty("text")]
+    public string Text { get; set; }
 
-        [JsonProperty("text")]
-        public string Text { get; set; }
+    [JsonProperty("style")]
+    public string Style { get; set; }
 
-        [JsonProperty("style")]
-        public string Style { get; set; }
+    [JsonProperty("type")]
+    public string Type { get; set; }
 
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("value")]
-        public string Value { get; set; }
-    }
+    [JsonProperty("value")]
+    public string Value { get; set; }
 }

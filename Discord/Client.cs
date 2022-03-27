@@ -1,71 +1,70 @@
-namespace Devanewbot.Discord
+namespace Devanewbot.Discord;
+
+using System;
+using System.Threading.Tasks;
+using global::Discord.Rest;
+using global::Discord.WebSocket;
+using Microsoft.Extensions.Options;
+using SlackDotNet;
+using SlackDotNet.Payloads;
+
+public class Client : IDisposable
 {
-    using System;
-    using System.Threading.Tasks;
-    using global::Discord.Rest;
-    using global::Discord.WebSocket;
-    using Microsoft.Extensions.Options;
-    using SlackDotNet;
-    using SlackDotNet.Payloads;
+    protected DiscordSocketClient SocketClient { get; }
 
-    public class Client : IDisposable
+    protected Slack Slack { get; }
+
+    protected DiscordOptions DiscordOptions { get; }
+    private static readonly string ChannelId = "C035Z122Z0F";
+
+    public Client(Slack slack,
+        IOptions<DiscordOptions> discordOptions)
     {
-        protected DiscordSocketClient SocketClient { get; }
+        SocketClient = new DiscordSocketClient();
+        Slack = slack;
+        DiscordOptions = discordOptions.Value;
+    }
 
-        protected Slack Slack { get; }
+    public void Dispose()
+    {
+        SocketClient.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
-        protected DiscordOptions DiscordOptions { get; }
-        private static readonly string ChannelId = "C035Z122Z0F";
+    public async Task Start()
+    {
 
-        public Client(Slack slack,
-            IOptions<DiscordOptions> discordOptions)
+        SocketClient.UserVoiceStateUpdated += UserVoiceUpdated;
+        await SocketClient.LoginAsync(global::Discord.TokenType.Bot, DiscordOptions.Token);
+        await SocketClient.StartAsync();
+    }
+
+    public async Task UserVoiceUpdated(SocketUser user, SocketVoiceState oldVoiceState, SocketVoiceState newVoiceState)
+    {
+        if (user is not SocketGuildUser guildUser)
         {
-            SocketClient = new DiscordSocketClient();
-            Slack = slack;
-            DiscordOptions = discordOptions.Value;
+            return;
         }
 
-        public void Dispose()
+        var restUser = await SocketClient.Rest.GetGuildUserAsync(guildUser.Guild.Id, guildUser.Id);
+        if (oldVoiceState.VoiceChannel == null && newVoiceState.VoiceChannel != null)
         {
-            SocketClient.Dispose();
-            GC.SuppressFinalize(this);
+            await SendMessage("joined", restUser, newVoiceState.VoiceChannel);
         }
-
-        public async Task Start()
+        else if (oldVoiceState.VoiceChannel != null & newVoiceState.VoiceChannel == null)
         {
-
-            SocketClient.UserVoiceStateUpdated += UserVoiceUpdated;
-            await SocketClient.LoginAsync(global::Discord.TokenType.Bot, DiscordOptions.Token);
-            await SocketClient.StartAsync();
+            await SendMessage("left", restUser, oldVoiceState.VoiceChannel);
         }
+    }
 
-        public async Task UserVoiceUpdated(SocketUser user, SocketVoiceState oldVoiceState, SocketVoiceState newVoiceState)
+    protected async Task SendMessage(string action, RestGuildUser user, SocketVoiceChannel channel)
+    {
+        var message = new ChatMessage()
         {
-            if (user is not SocketGuildUser guildUser)
-            {
-                return;
-            }
+            Channel = ChannelId,
+            Text = @$"{user.DisplayName} has {action} #{channel.Name}"
+        };
 
-            var restUser = await SocketClient.Rest.GetGuildUserAsync(guildUser.Guild.Id, guildUser.Id);
-            if (oldVoiceState.VoiceChannel == null && newVoiceState.VoiceChannel != null)
-            {
-                await SendMessage("joined", restUser, newVoiceState.VoiceChannel);
-            }
-            else if (oldVoiceState.VoiceChannel != null & newVoiceState.VoiceChannel == null)
-            {
-                await SendMessage("left", restUser, oldVoiceState.VoiceChannel);
-            }
-        }
-
-        protected async Task SendMessage(string action, RestGuildUser user, SocketVoiceChannel channel)
-        {
-            var message = new ChatMessage()
-            {
-                Channel = ChannelId,
-                Text = @$"{user.DisplayName} has {action} #{channel.Name}"
-            };
-
-            await Slack.PostMessage(message);
-        }
+        await Slack.PostMessage(message);
     }
 }

@@ -1,7 +1,5 @@
-namespace Devanewbot.Discord
+namespace Devanewbot.Discord;
+public class DiscordOptions
 {
-    public class DiscordOptions
-    {
-        public string Token { get; set; }
-    }
+    public string Token { get; set; }
 }
