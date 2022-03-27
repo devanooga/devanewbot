@@ -26,12 +26,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var slackTaskClient = new Slack(
-            Configuration["Slack:OauthToken"],
-            Configuration["Slack:SigningSecret"],
-            Configuration["Slack:VerificationToken"]);
-
-        services.AddSingleton<Slack>(slackTaskClient);
+        services.AddSingleton<Slack>();
         services.AddSingleton<SlackSocket>();
         services.AddSingleton<SpongebobCommand>();
         services.AddSingleton<GifCommand>();
@@ -40,6 +35,7 @@ public class Startup
         services.AddSingleton<ICommandService, CommandService>();
         services.Configure<DiscordOptions>(o => Configuration.GetSection("Discord").Bind(o));
         services.Configure<SlackSocketOptions>(o => Configuration.GetSection("SlackSocket").Bind(o));
+        services.Configure<SlackOptions>(o => Configuration.GetSection("Slack").Bind(o));
         services.AddHangfire(config => config.UseRedisStorage(Configuration.GetConnectionString("Redis")));
     }
 

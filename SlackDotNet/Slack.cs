@@ -3,21 +3,19 @@ namespace SlackDotNet;
 using System.Threading.Tasks;
 using Flurl;
 using Flurl.Http;
+using Microsoft.Extensions.Options;
+using SlackDotNet.Options;
 using SlackDotNet.Payloads;
 using SlackDotNet.Responses;
 using SlackDotNet.Webhooks;
 
 public class Slack
 {
-    private string OauthToken { get; set; }
-    private string SigningSecret { get; set; }
-    private string VerificationToken { get; set; }
+    private SlackOptions Options { get; set; }
 
-    public Slack(string oauthToken, string signingSecret, string verificationToken)
+    public Slack(IOptions<SlackOptions> options)
     {
-        OauthToken = oauthToken;
-        SigningSecret = signingSecret;
-        VerificationToken = verificationToken;
+        Options = options.Value;
     }
 
     /// <summary>
@@ -28,7 +26,7 @@ public class Slack
     /// <returns></returns>
     public bool ValidInteractiveMessage(InteractiveMessage model)
     {
-        return model.Token == VerificationToken;
+        return model.Token == Options.VerificationToken;
     }
 
     /// <summary>
@@ -39,7 +37,7 @@ public class Slack
     public async Task<User> GetUser(string userId)
     {
         var response = await "https://slack.com/api/users.info"
-            .SetQueryParam("token", OauthToken)
+            .SetQueryParam("token", Options.OauthToken)
             .SetQueryParam("user", userId)
             .GetJsonAsync<Response>();
 
@@ -55,7 +53,7 @@ public class Slack
     {
         var endpoint = ephemeral ? "postEphemeral" : "postMessage";
         var response = await $"https://slack.com/api/chat.{endpoint}"
-            .WithHeader("Authorization", "Bearer " + OauthToken)
+            .WithHeader("Authorization", "Bearer " + Options.OauthToken)
             .PostJsonAsync(message);
 
         return true;
@@ -69,7 +67,7 @@ public class Slack
     public async Task<bool> DeleteResponse(string responseUrl)
     {
         var response = await responseUrl
-            .WithHeader("Authorization", "Bearer " + OauthToken)
+            .WithHeader("Authorization", "Bearer " + Options.OauthToken)
             .PostJsonAsync(new
             {
                 delete_original = true
