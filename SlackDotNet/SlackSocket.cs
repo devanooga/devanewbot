@@ -13,9 +13,8 @@ using SlackDotNet.Responses;
 using SlackDotNet.Webhooks;
 using WebSocketExtensions;
 
-public class SlackSocket
+public class SlackSocket : IDisposable
 {
-    private string SocketUri { get; set; }
     private SlackSocketOptions Options { get; set; }
     private ICommandService CommandService { get; set; }
     private WebSocketClient WebSocketClient { get; set; }
@@ -26,6 +25,12 @@ public class SlackSocket
         Options = options.Value;
         CommandService = commandService;
         Logger = logger;
+    }
+
+    public void Dispose()
+    {
+        WebSocketClient.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -60,10 +65,11 @@ public class SlackSocket
     private async Task HandleMessageAsync(string message)
     {
         var socketMessage = JsonNode.Parse(message);
+        // Slack sends a "type" for each message. Based on that type, we need to perform a different action
         switch ((string)socketMessage["type"])
         {
             case "hello":
-                // Received hello message. Can ignore.
+                // Received hello message. Just log and wave, boys. Log and wave.
                 Logger.LogInformation("Received 'hello' ping from slack: " + message);
                 break;
             case "slash_commands":
@@ -80,6 +86,12 @@ public class SlackSocket
                 await CommandService.HandleInteractive(
                     DeserializePayload<InteractiveMessage>(socketMessage["payload"].AsObject())
                 );
+                break;
+            case "disconnect":
+                // Slack will periodically ("once every few hours"), kill the connection.
+                // We just need to open a new connection and keep on trucking.
+                Logger.LogInformation("Slack Socket is disconnecting. Starting new connection.");
+                await Connect();
                 break;
             default:
                 Logger.LogWarning("I don't know how to handle this message received from the Slack Socket: " + message);
