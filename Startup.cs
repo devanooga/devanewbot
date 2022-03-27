@@ -11,6 +11,7 @@ namespace devanewbot
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using SlackDotNet;
+    using SlackDotNet.Options;
 
     public class Startup
     {
@@ -33,17 +34,23 @@ namespace devanewbot
                 Configuration["Slack:VerificationToken"]);
 
             services.AddSingleton<Slack>(slackTaskClient);
+            services.AddSingleton<SlackSocket>();
             services.AddSingleton<SpongebobCommand>();
             services.AddSingleton<GifCommand>();
             services.AddSingleton<StallmanCommand>();
             services.AddSingleton<Client>();
+            services.AddSingleton<ICommandService, CommandService>();
             services.Configure<DiscordOptions>(o => Configuration.GetSection("Discord").Bind(o));
+            services.Configure<SlackSocketOptions>(o => Configuration.GetSection("SlackSocket").Bind(o));
             services.AddHangfire(config => config.UseRedisStorage(Configuration.GetConnectionString("Redis")));
         }
 
         [System.Obsolete]
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Client client)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Client client, SlackSocket slackSocket)
         {
+            // Start the Slack socket connection
+            Task.Run(() => slackSocket.Connect());
+
             Client = client;
             Task.Run(() => client.Start());
             if (env.IsDevelopment())

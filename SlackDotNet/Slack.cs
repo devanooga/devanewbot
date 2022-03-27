@@ -1,11 +1,11 @@
 namespace SlackDotNet
 {
+    using System.Threading.Tasks;
     using Flurl;
     using Flurl.Http;
-    using SlackDotNet.Webhooks;
-    using SlackDotNet.Responses;
     using SlackDotNet.Payloads;
-    using System.Threading.Tasks;
+    using SlackDotNet.Responses;
+    using SlackDotNet.Webhooks;
 
     public class Slack
     {
@@ -18,17 +18,6 @@ namespace SlackDotNet
             OauthToken = oauthToken;
             SigningSecret = signingSecret;
             VerificationToken = verificationToken;
-        }
-
-        /// <summary>
-        /// Verifies the authenticity of a webhook message from Slack.
-        /// Should be used before acting on a webhook.
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        public bool ValidWebhookMessage(WebhookMessage model)
-        {
-            return model.Token == VerificationToken;
         }
 
         /// <summary>

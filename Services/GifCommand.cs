@@ -10,12 +10,13 @@ namespace devanewbot.Services
     using SlackDotNet;
     using System.Collections.Generic;
     using System;
+    using Microsoft.Extensions.Logging;
 
     public class GifCommand : Command
     {
         private Random Random = new Random();
 
-        public GifCommand(Slack slack, IConfiguration configuration) : base(slack, configuration)
+        public GifCommand(Slack slack, IConfiguration configuration, ILogger<GifCommand> logger) : base("jif", slack, configuration, logger)
         {
         }
 
@@ -69,7 +70,7 @@ namespace devanewbot.Services
         /// </summary>
         /// <param name="interactiveMessage"></param>
         /// <returns></returns>
-        public async Task HandleInteractive(InteractiveMessage interactiveMessage)
+        public override async Task HandleInteractive(InteractiveMessage interactiveMessage)
         {
             if (Slack.ValidInteractiveMessage(interactiveMessage))
             {
@@ -126,7 +127,7 @@ namespace devanewbot.Services
                     new ChatAttachment
                     {
                         Text = text,
-                        CallbackId = "gif",
+                        CallbackId = "jif",
                         ImageUrl = gifUrl,
                         Actions = new List<ChatAction>()
                         {

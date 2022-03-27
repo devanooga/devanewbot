@@ -4,6 +4,7 @@ namespace devanewbot.Services
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
     using SlackDotNet;
     using SlackDotNet.Payloads;
     using SlackDotNet.Webhooks;
@@ -12,7 +13,7 @@ namespace devanewbot.Services
     {
         private Random Random = new Random();
 
-        public SpongebobCommand(Slack slack, IConfiguration configuration) : base(slack, configuration)
+        public SpongebobCommand(Slack slack, IConfiguration configuration, ILogger<SpongebobCommand> logger) : base("spongebob", slack, configuration, logger)
         {
         }
 

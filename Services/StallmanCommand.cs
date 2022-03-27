@@ -5,6 +5,7 @@ namespace devanewbot.Services
     using System.Threading.Tasks;
     using HtmlAgilityPack;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
     using SlackDotNet;
     using SlackDotNet.Payloads;
     using SlackDotNet.Webhooks;
@@ -14,7 +15,7 @@ namespace devanewbot.Services
         private Random Random = new Random();
         private const string Gallery = "https://stallman.org/photos/rms-working/";
 
-        public StallmanCommand(Slack slack, IConfiguration configuration) : base(slack, configuration)
+        public StallmanCommand(Slack slack, IConfiguration configuration, ILogger<StallmanCommand> logger) : base("stallman", slack, configuration, logger)
         {
         }
 
@@ -41,7 +42,7 @@ namespace devanewbot.Services
             // Download the gallery page and get random link
             var galleryPage = new HtmlWeb().Load(Gallery);
             var links = galleryPage.DocumentNode
-                    .SelectNodes("//p[2]/a");
+                    .SelectNodes("//p[3]/a");
             var link = Gallery + links[Random.Next(links.Count)]
                     .Attributes["href"].Value;
 
