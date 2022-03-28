@@ -65,6 +65,8 @@ public class SlackSocket : IDisposable
     private async Task HandleMessageAsync(string message)
     {
         var socketMessage = JsonNode.Parse(message);
+        await AcknowledgeMessage(socketMessage);
+
         // Slack sends a "type" for each message. Based on that type, we need to perform a different action
         switch ((string)socketMessage["type"])
         {
@@ -79,7 +81,6 @@ public class SlackSocket : IDisposable
                 await CommandService.HandleMessage(
                     DeserializePayload<WebhookMessage>(socketMessage["payload"].AsObject()),
                     Options.CommandSuffix);
-                await AcknowledgeMessage((string)socketMessage["envelope_id"]);
                 break;
             case "interactive":
                 Logger.LogInformation("Processing InteractiveMessage: " + message);
@@ -122,8 +123,12 @@ public class SlackSocket : IDisposable
     /// </summary>
     /// <param name="envelopeId"></param>
     /// <returns></returns>
-    private async Task AcknowledgeMessage(string envelopeId)
+    private async Task AcknowledgeMessage(JsonNode message)
     {
-        await WebSocketClient.SendStringAsync("{\"envelope_id\": \"" + envelopeId + "\"}");
+        var envelopeId = (string)message["envelope_id"];
+        if (!String.IsNullOrEmpty(envelopeId))
+        {
+            await WebSocketClient.SendStringAsync("{\"envelope_id\": \"" + envelopeId + "\"}");
+        }
     }
 }
