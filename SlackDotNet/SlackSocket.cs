@@ -1,6 +1,7 @@
 namespace SlackDotNet;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -19,6 +20,7 @@ public class SlackSocket : IDisposable
     private ICommandService CommandService { get; set; }
     private WebSocketClient WebSocketClient { get; set; }
     private ILogger<SlackSocket> Logger { get; set; }
+    private Dictionary<string, DateTime> MessageEnvelopes { get; set; } = new Dictionary<string, DateTime>();
 
     public SlackSocket(IOptions<SlackSocketOptions> options, ICommandService commandService, ILogger<SlackSocket> logger)
     {
@@ -65,6 +67,23 @@ public class SlackSocket : IDisposable
     private async Task HandleMessageAsync(string message)
     {
         var socketMessage = JsonNode.Parse(message);
+        var envelopeId = (string)socketMessage["envelope_id"];
+
+        if (!String.IsNullOrEmpty(envelopeId))
+        {
+            // Acknowledge that we've received this message
+            await AcknowledgeMessage(envelopeId);
+
+            // Check if we've already received this message. If so, return early.
+            // Otherwise, add it to the dictionary of entities.
+            if (MessageEnvelopes.ContainsKey(envelopeId))
+            {
+                return;
+            }
+
+            MessageEnvelopes.Add(envelopeId, DateTime.Now);
+        }
+
         // Slack sends a "type" for each message. Based on that type, we need to perform a different action
         switch ((string)socketMessage["type"])
         {
@@ -79,7 +98,6 @@ public class SlackSocket : IDisposable
                 await CommandService.HandleMessage(
                     DeserializePayload<WebhookMessage>(socketMessage["payload"].AsObject()),
                     Options.CommandSuffix);
-                await AcknowledgeMessage((string)socketMessage["envelope_id"]);
                 break;
             case "interactive":
                 Logger.LogInformation("Processing InteractiveMessage: " + message);
@@ -97,6 +115,9 @@ public class SlackSocket : IDisposable
                 Logger.LogWarning("I don't know how to handle this message received from the Slack Socket: " + message);
                 break;
         }
+
+        // Make sure that the envelope cache doesn't grow bigger than 1 hour worth of messages
+        ManageMessageEnvelopes();
     }
 
     /// <summary>
@@ -125,5 +146,22 @@ public class SlackSocket : IDisposable
     private async Task AcknowledgeMessage(string envelopeId)
     {
         await WebSocketClient.SendStringAsync("{\"envelope_id\": \"" + envelopeId + "\"}");
+    }
+
+    /// <summary>
+    /// Removes message envelopes that are older than 1 hour.
+    /// </summary>
+    /// <returns></returns>
+    private void ManageMessageEnvelopes()
+    {
+        var oneHour = new TimeSpan(1, 0, 0);
+        var oneHourAgo = DateTime.Now - oneHour;
+        foreach(var envelope in MessageEnvelopes)
+        {
+            if (DateTime.Compare(envelope.Value, oneHourAgo) < 0)
+            {
+                MessageEnvelopes.Remove(envelope.Key);
+            }
+        }
     }
 }
