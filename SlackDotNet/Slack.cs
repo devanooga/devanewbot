@@ -1,5 +1,8 @@
 namespace SlackDotNet;
 
+using System;
+using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Flurl;
 using Flurl.Http;
@@ -74,5 +77,28 @@ public class Slack
             });
 
         return true;
+    }
+
+    public async Task<bool> UploadFile(Stream stream, string fileName, string contentType, string[] channelIds = null)
+    {
+        var response = await "https://slack.com/api/files.upload"
+            .WithHeader("Authorization", "Bearer " + Options.OauthToken)
+            .PostMultipartAsync(builder =>
+            {
+                builder
+                    .AddFile("file", stream, fileName, contentType);
+                if (channelIds is not null)
+                {
+                    builder.AddString("channels", string.Join(",", channelIds));
+                }
+            });
+        var body = await response.GetStringAsync();
+        var json = JsonSerializer.Deserialize<Response>(body);
+        if (!json.Ok)
+        {
+            throw new Exception(body);
+        }
+
+        return response.ResponseMessage.IsSuccessStatusCode && json.Ok;
     }
 }

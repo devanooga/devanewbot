@@ -156,7 +156,7 @@ public class SlackSocket : IDisposable
     {
         var oneHour = new TimeSpan(1, 0, 0);
         var oneHourAgo = DateTime.Now - oneHour;
-        foreach(var envelope in MessageEnvelopes)
+        foreach (var envelope in MessageEnvelopes)
         {
             if (DateTime.Compare(envelope.Value, oneHourAgo) < 0)
             {
