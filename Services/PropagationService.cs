@@ -22,6 +22,7 @@ public class PropagationService
     {
         var timeStamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
         var response = await "http://www.hamqsl.com/solar101vhf.php/solar101vhf.php?{timeStamp}".GetAsync();
+        // We convert the image to PNG because for some reason Slack scaling gets really funny with gifs (#21)
         using var image = new MagickImage(await response.GetStreamAsync());
         using var memoryStream = new MemoryStream();
         image.Format = MagickFormat.Png64;

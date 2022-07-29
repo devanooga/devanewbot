@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using SlackDotNet.Options;
 using SlackDotNet.Payloads;
 using SlackDotNet.Responses;
@@ -93,12 +94,12 @@ public class Slack
                 }
             });
         var body = await response.GetStringAsync();
-        var json = JsonSerializer.Deserialize<Response>(body);
-        if (!json.Ok)
+        var json = JObject.Parse(body);
+        if (!json["ok"].Value<bool>())
         {
             throw new Exception(body);
         }
 
-        return response.ResponseMessage.IsSuccessStatusCode && json.Ok;
+        return response.ResponseMessage.IsSuccessStatusCode;
     }
 }
