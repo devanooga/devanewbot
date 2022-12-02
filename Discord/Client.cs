@@ -27,7 +27,7 @@ public class Client : IDisposable
 
     public void Dispose()
     {
-        SocketClient.Dispose();
+        SocketClient?.Dispose();
         GC.SuppressFinalize(this);
     }
 

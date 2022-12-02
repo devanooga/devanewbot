@@ -2,7 +2,6 @@ namespace SlackDotNet;
 
 using System;
 using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Flurl;
 using Flurl.Http;
@@ -78,6 +77,31 @@ public class Slack
             });
 
         return true;
+    }
+
+    /// <summary>
+    /// Deletes a message in response to an interactive command
+    /// </summary>
+    /// <param name="responseUrl"></param>
+    /// <returns></returns>
+    public async Task<(bool Success, string Error)> InviteUser(string email)
+    {
+        var response = await $"https://devanooga.slack.com/api/users.admin.invite"
+            .PostUrlEncodedAsync(new
+            {
+                token = Options.LegacyToken,
+                email,
+                set_active = true
+            });
+
+        var body = await response.GetStringAsync();
+        var json = JObject.Parse(body);
+        if (!json["ok"].Value<bool>())
+        {
+            return (false, json["error"].ToString());
+        }
+
+        return (true, null);
     }
 
     public async Task<bool> UploadFile(Stream stream, string fileName, string contentType, string[] channelIds = null)

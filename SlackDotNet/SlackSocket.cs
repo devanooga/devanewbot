@@ -31,7 +31,7 @@ public class SlackSocket : IDisposable
 
     public void Dispose()
     {
-        WebSocketClient.Dispose();
+        WebSocketClient?.Dispose();
         GC.SuppressFinalize(this);
     }
 
