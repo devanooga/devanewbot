@@ -61,7 +61,7 @@ async function signup() {
             switch (error.response.data.error) {
                 case "already_in_team":
                     error.value =
-                        "This e-mail address is already a member of the community.";
+                        "This e-mail address is already a member of the community, if you need an invite resent please contact us via our contact form.";
                     break;
                 case "token_verification_failed":
                     error.value =
