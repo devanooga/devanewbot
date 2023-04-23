@@ -5,8 +5,8 @@
         </h1>
         <h2>Join the Devanooga Community</h2>
     </div>
-    <div class="error" v-if="showAlreadyInTeamMessage">
-        This e-mail address is already a member of the community.
+    <div class="error" v-if="error">
+        {{ error }}
     </div>
     <div class="content">
         <div class="information">
@@ -43,11 +43,11 @@ export default defineComponent({
 const { executeRecaptcha, recaptchaLoaded } =
     useReCaptcha() as IReCaptchaComposition;
 const email = ref("");
-const showAlreadyInTeamMessage = ref(false);
+const error = ref<string | null>(null);
 const signupAccepted = ref(false);
 await recaptchaLoaded();
 async function signup() {
-    showAlreadyInTeamMessage.value = false;
+    error.value = null;
     signupAccepted.value = false;
     await axios
         .post("/api/v0/signup", {
@@ -60,11 +60,15 @@ async function signup() {
         .catch((error) => {
             switch (error.response.data.error) {
                 case "already_in_team":
-                    showAlreadyInTeamMessage.value = true;
+                    error.value =
+                        "This e-mail address is already a member of the community, if you need an invite resent please contact us via our contact form.";
                     break;
                 case "token_verification_failed":
-                    alert("wat");
+                    error.value =
+                        "Slack sign-up failed -- Slack returned an unexpected error code, this may be a temporary issue, please try again in a minute, if the issue persists please reach out to us via our contact form!";
                     break;
+                default:
+                    error.value = `Unexpected error code from Slack: ${error.response.data.error}, please report this error via our contact form and we'll send you an invite manually!`;
             }
         });
 }
