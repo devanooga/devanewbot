@@ -65,7 +65,7 @@ async function signup() {
                     break;
                 case "token_verification_failed":
                     errorMessage.value =
-                        "Slack sign-up failed -- Slack returned an unexpected error code, this may be a temporary issue, please try again in a minute, if the issue persists please reach out to us via our contact form!";
+                        "The recaptcha token provided was invalid, please check the recaptcha form field and try again, if the issue persists please refresh and try again, if it still persists please reach out to us via our contact form.";
                     break;
                 default:
                     errorMessage.value = `Unexpected error code from Slack: ${error.response.data.error}, please report this error via our contact form and we'll send you an invite manually!`;
