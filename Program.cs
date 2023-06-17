@@ -10,6 +10,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using RollbarDotNet.Configuration;
+using RollbarDotNet.Core;
+using RollbarDotNet.Logger;
 using SlackDotNet;
 using SlackDotNet.Options;
 
@@ -31,9 +35,11 @@ builder.Services
     .AddSingleton<StallmanCommand>()
     .AddSingleton<Client>()
     .AddSingleton<ICommandService, CommandService>()
+    .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
     .Configure<SlackSocketOptions>(o => configuration.GetSection("SlackSocket").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
+    .AddRollbarWeb()
     .AddHangfire(config => config.UseRedisStorage(configuration.GetConnectionString("Redis")))
     .AddHangfireServer()
     .AddAuthorization()
@@ -46,7 +52,8 @@ builder.Services
     .AddHostedService<HangfireHostedService>();
 
 var app = builder.Build();
-
+var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+loggerFactory.AddRollbarDotNetLogger(app.Services);
 app
     .UseForwardedHeaders()
     .UseHsts()
@@ -67,6 +74,7 @@ app
             }
         }
     })
+    .UseRollbarExceptionHandler()
     .UseAuthentication()
     .UseAuthorization()
     .UseRouting()

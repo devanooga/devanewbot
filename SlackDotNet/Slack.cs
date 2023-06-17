@@ -58,6 +58,10 @@ public class Slack
         var response = await $"https://slack.com/api/chat.{endpoint}"
             .WithHeader("Authorization", "Bearer " + Options.OauthToken)
             .PostJsonAsync(message);
+        if (response.StatusCode != 200)
+        {
+            throw new Exception($"Error posting message to Slack: {await response.GetStringAsync()}");
+        }
 
         return true;
     }

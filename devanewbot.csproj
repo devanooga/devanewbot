@@ -14,6 +14,7 @@
     <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.8.5" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.42" />
     <PackageReference Include="Magick.NET-Q16-HDRI-AnyCPU" Version="11.3.0" />
+    <PackageReference Include="RollbarDotNet" Version="0.7.0" />
     <PackageReference Include="WebSocketExtensions" Version="2.1.9" />
   </ItemGroup>
 

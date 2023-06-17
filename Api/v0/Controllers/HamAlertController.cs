@@ -16,11 +16,11 @@ public class HamAlertController : Controller
 
 
     [HttpPost("{userId}")]
-    public async Task<IActionResult> Alert(string userId, [FromQuery] string fullCallsign, [FromQuery] string callSign, string frequency, string band, string mode, string time)
+    public async Task<IActionResult> Alert(string userId, [FromQuery] string fullCallsign, [FromForm] string callSign, [FromForm] string frequency, [FromForm] string band, [FromForm] string mode, [FromForm] string time)
     {
         await Slack.PostMessage(new SlackDotNet.Payloads.ChatMessage
         {
-            User = userId,
+            Channel = userId,
             Text = $"HamAlert: {callSign} {frequency} {band} {mode} {time}"
         });
 
