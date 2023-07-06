@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AspNetCore.ReCaptcha;
 using devanewbot.Api.v0.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SlackDotNet;
 
@@ -16,13 +17,17 @@ public class SignupController : Controller
 
     protected ReCaptchaSettings ReCaptchaSettings { get; }
 
+    protected ILogger<SignupController> Logger { get; }
+
     public SignupController(Slack slack,
          IReCaptchaService reCaptchaService,
-         IOptions<ReCaptchaSettings> reCaptchaSettings)
+         IOptions<ReCaptchaSettings> reCaptchaSettings,
+         ILogger<SignupController> logger)
     {
         Slack = slack;
         ReCaptchaService = reCaptchaService;
         ReCaptchaSettings = reCaptchaSettings.Value;
+        Logger = logger;
     }
 
     [HttpGet]
@@ -42,6 +47,7 @@ public class SignupController : Controller
             return BadRequest(new { Error = "token_verification_failed" });
         }
 
+        Logger.LogInformation("Sending invite to {email} from IP {ip}", model.Email, Request.HttpContext.Connection.RemoteIpAddress);
         var (Success, Error) = await Slack.InviteUser(model.Email);
         if (Success)
         {
