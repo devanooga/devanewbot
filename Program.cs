@@ -46,6 +46,7 @@ builder.Services
         options.KnownProxies.Clear();
         options.ForwardedHeaders =
             ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 2; // CDN + Load balancer
     })
     .AddRollbarWeb()
     .AddHangfire(config => config.UseRedisStorage(configuration.GetConnectionString("Redis")))
