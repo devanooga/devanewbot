@@ -8,6 +8,7 @@ using Devanewbot.Discord;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -39,6 +40,13 @@ builder.Services
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
     .Configure<SlackSocketOptions>(o => configuration.GetSection("SlackSocket").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
+    .Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+        options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    })
     .AddRollbarWeb()
     .AddHangfire(config => config.UseRedisStorage(configuration.GetConnectionString("Redis")))
     .AddHangfireServer()
