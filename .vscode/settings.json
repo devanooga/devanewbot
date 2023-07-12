@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
         "Devanewbot"
-    ]
+    ],
+    "dotnet.defaultSolution": "devanewbot.sln"
 }

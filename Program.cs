@@ -6,6 +6,7 @@ using devanewbot.HostedServices;
 using devanewbot.Services;
 using Devanewbot.Discord;
 using Hangfire;
+using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
