@@ -23,7 +23,8 @@ public class QrmBotCommand : Command
     {
         var perlStartInfo = new ProcessStartInfo(@"perl")
         {
-            Arguments = $"{Directory}qrmbot/lib/{CommandText} \"{webhookMessage.Text}\"",
+            // MAKE SURE WE ESCAPE DOUBLE QUOTES DON'T RUIN MY DAY I SWEAR
+            Arguments = $"{Directory}qrmbot/lib/{CommandText} \"{webhookMessage.Text.Replace("\"", "\\\"")}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
