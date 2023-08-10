@@ -3,3 +3,5 @@ obj/
 appsettings.Development.json
 appsettings.local.json
 wwwroot/
+qrmbot/
+master.zip

@@ -1,7 +1,12 @@
 namespace devanewbot.Services;
 
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SlackDotNet;
 using SlackDotNet.Webhooks;
@@ -10,8 +15,12 @@ public class CommandService : ICommandService
 {
     private List<Command> Commands { get; set; }
     private ILogger<CommandService> Logger { get; set; }
+    protected IServiceProvider ServiceProvider { get; set; }
+    protected IServiceScope ServiceScope { get; set; }
 
-    public CommandService(GifCommand gifCommand, SpongebobCommand spongebobCommand, StallmanCommand stallmanCommand, ILogger<CommandService> logger)
+    public CommandService(
+        IServiceProvider serviceProvider,
+        GifCommand gifCommand, SpongebobCommand spongebobCommand, StallmanCommand stallmanCommand, ILogger<CommandService> logger)
     {
         // Register new commands here by adding it to the constructor and appending it to the list.
         Commands = new List<Command>()
@@ -20,6 +29,16 @@ public class CommandService : ICommandService
             spongebobCommand,
             stallmanCommand
         };
+
+        // "No!" says the man in Github, "this should be a factory"
+        //  I choose the lazy solution, I choose... this.
+        Commands.AddRange(Directory.EnumerateFiles("qrmbot/lib")
+            .Select(f => new QrmBotCommand(
+                f.Replace(".pl", string.Empty),
+                serviceProvider.GetRequiredService<Slack>(),
+                serviceProvider.GetRequiredService<IConfiguration>(),
+                serviceProvider.GetRequiredService<ILogger<QrmBotCommand>>()))
+            .ToArray());
         Logger = logger;
     }
 
