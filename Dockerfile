@@ -7,7 +7,8 @@ EXPOSE 5010
 ENV ASPNETCORE_URLS=http://+:5010
 
 RUN apt-get update && \
-    apt-get install wget unzip -y
+    apt-get install wget unzip curl jq \
+    perl perl-base perl-modules libclone-perl libdate-manip-perl libdatetime-format-strptime-perl libdatetime-perl libjson-perl libmath-bigint-perl libmath-round-perl libswitch-perl libtext-csv-perl liburi-perl -y
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-dotnet-configure-containers
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app

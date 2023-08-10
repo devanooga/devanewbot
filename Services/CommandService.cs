@@ -34,7 +34,7 @@ public class CommandService : ICommandService
         //  I choose the lazy solution, I choose... this.
         Commands.AddRange(Directory.EnumerateFiles("qrmbot/lib")
             .Select(f => new QrmBotCommand(
-                f.Replace(".pl", string.Empty),
+                f.Split("/").Last().Replace(".pl", string.Empty),
                 serviceProvider.GetRequiredService<Slack>(),
                 serviceProvider.GetRequiredService<IConfiguration>(),
                 serviceProvider.GetRequiredService<ILogger<QrmBotCommand>>()))
@@ -54,13 +54,20 @@ public class CommandService : ICommandService
     /// <returns></returns>
     public async Task HandleMessage(WebhookMessage message, string commandSuffix = "")
     {
-        // Remove leading forward-slash and any optional suffix
-        var messageCommand = message.Command.Substring(1);
-        messageCommand = messageCommand.Substring(0, messageCommand.Length - commandSuffix.Length);
+        try
+        {
+            // Remove leading forward-slash and any optional suffix
+            var messageCommand = message.Command.Substring(1);
+            messageCommand = messageCommand.Substring(0, messageCommand.Length - commandSuffix.Length);
 
-        var command = Commands.Find((c) => c.CommandText == messageCommand);
+            var command = Commands.Find((c) => c.CommandText == messageCommand);
 
-        await command.Execute(message);
+            await command.Execute(message);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error running command: {}", message.Command);
+        }
     }
 
     /// <summary>
@@ -75,6 +82,14 @@ public class CommandService : ICommandService
     {
         var command = Commands.Find((c) => c.CommandText == message.CallbackId);
 
-        await command.ExecuteInteractive(message);
+        try
+        {
+            Logger.LogError("Test: {}", message.CallbackId);
+            await command.ExecuteInteractive(message);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Error running command: {}", message.CallbackId);
+        }
     }
 }

@@ -21,10 +21,11 @@ public class QrmBotCommand : Command
 
     protected override async Task HandleMessage(WebhookMessage webhookMessage)
     {
+        var slackUser = await Slack.GetUser(webhookMessage.UserId);
         var perlStartInfo = new ProcessStartInfo(@"perl")
         {
             // MAKE SURE WE ESCAPE DOUBLE QUOTES DON'T RUIN MY DAY I SWEAR
-            Arguments = $"{Directory}qrmbot/lib/{CommandText} \"{webhookMessage.Text.Replace("\"", "\\\"")}\"",
+            Arguments = $"{Directory}lib/{CommandText} \"{webhookMessage.Text.Replace("\"", "\\\"")}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -43,6 +44,8 @@ public class QrmBotCommand : Command
         {
             Channel = webhookMessage.ChannelId,
             Text = output,
+            Username = slackUser.Profile.DisplayName,
+            IconUrl = slackUser.Profile.ImageOriginal
         });
     }
 }
