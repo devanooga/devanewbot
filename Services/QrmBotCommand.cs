@@ -37,7 +37,7 @@ public class QrmBotCommand : Command
 
         perl.Start();
         await perl.WaitForExitAsync();
-        string output = await perl.StandardOutput.ReadToEndAsync();
+        string output = await perl.StandardOutput.ReadToEndAsync() + await perl.StandardError.ReadToEndAsync();
         await Slack.PostMessage(new ChatMessage
         {
             Channel = webhookMessage.ChannelId,
