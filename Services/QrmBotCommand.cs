@@ -31,10 +31,12 @@ public class QrmBotCommand : ISlashCommandHandler
 
     protected async Task RunCommand(SlashCommand command)
     {
+        // Remove first slash
+        var cmd = command.Command.Substring(1);
         var perlStartInfo = new ProcessStartInfo(@"perl")
         {
             // MAKE SURE WE ESCAPE DOUBLE QUOTES DON'T RUIN MY DAY I SWEAR
-            Arguments = $"{Directory}lib/{command.Command} \"{command.Text.Replace("\"", "\\\"")}\"",
+            Arguments = $"{Directory}lib/{cmd} \"{command.Text.Replace("\"", "\\\"")}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
