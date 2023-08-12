@@ -1,27 +1,25 @@
 namespace devanewbot.HostedServices;
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Devanewbot.Discord;
 using Microsoft.Extensions.Hosting;
-using SlackDotNet;
+using Microsoft.Extensions.Logging;
 
 public class SlackBotHostedService : IHostedService
 {
     protected Client Client { get; }
 
-    protected SlackSocket SlackSocket { get; }
+    protected ILogger<SlackBotHostedService> Logger { get; }
 
-    public SlackBotHostedService(Client client, SlackSocket slackSocket)
+    public SlackBotHostedService(Client client, ILogger<SlackBotHostedService> logger)
     {
         Client = client;
-        SlackSocket = slackSocket;
+        Logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await SlackSocket.Connect();
         await Client.Start();
     }
 

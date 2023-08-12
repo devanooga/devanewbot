@@ -18,7 +18,7 @@ public class HangfireHostedService : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        RecurringJobManager.AddOrUpdate<PropagationService>("Ham Propagation", p => p.PostMessage(), "0 9 * * *", System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+        RecurringJobManager.AddOrUpdate<PropagationService>("Ham Propagation", p => p.PostMessage(), "0 9 * * *", new RecurringJobOptions { TimeZone = System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time") });
         return Task.CompletedTask;
     }
 
