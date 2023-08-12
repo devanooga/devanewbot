@@ -32,7 +32,7 @@ public class QrmBotCommand : ISlashCommandHandler
     protected async Task RunCommand(SlashCommand command)
     {
         // Remove first slash
-        var cmd = command.Command.Substring(1);
+        var cmd = command.Command.Substring(1).Replace("/wx", "/aeris");
         var perlStartInfo = new ProcessStartInfo(@"perl")
         {
             // MAKE SURE WE ESCAPE DOUBLE QUOTES DON'T RUIN MY DAY I SWEAR
