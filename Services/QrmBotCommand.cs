@@ -4,28 +4,37 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-using SlackDotNet.Webhooks;
+using SlackNet;
+using SlackNet.Interaction;
+using SlackNet.WebApi;
 
-public class QrmBotCommand : Command
+public class QrmBotCommand : ISlashCommandHandler
 {
+    protected ILogger<QrmBotCommand> Logger { get; }
 
     protected string Directory { get; }
 
-    public QrmBotCommand(string command, Slack slack, IConfiguration configuration, ILogger<QrmBotCommand> logger) : base(command, slack, configuration, logger)
+    protected ISlackApiClient Client { get; }
+
+    public QrmBotCommand(ISlackApiClient client, IConfiguration configuration, ILogger<QrmBotCommand> logger)
     {
-        Logger.LogInformation("Loadded QRM Bot Command: {}", command);
+        Logger = logger;
+        Client = client;
         Directory = configuration.GetSection("QRMBot").GetValue<string>("Directory");
     }
 
-    protected override async Task HandleMessage(WebhookMessage webhookMessage)
+    public Task<SlashCommandResponse> Handle(SlashCommand command)
     {
-        var slackUser = await Slack.GetUser(webhookMessage.UserId);
+        _ = RunCommand(command);
+        return Task.FromResult<SlashCommandResponse>(null);
+    }
+
+    protected async Task RunCommand(SlashCommand command)
+    {
         var perlStartInfo = new ProcessStartInfo(@"perl")
         {
             // MAKE SURE WE ESCAPE DOUBLE QUOTES DON'T RUIN MY DAY I SWEAR
-            Arguments = $"{Directory}lib/{CommandText} \"{webhookMessage.Text.Replace("\"", "\\\"")}\"",
+            Arguments = $"{Directory}lib/{command.Command} \"{command.Text.Replace("\"", "\\\"")}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -40,12 +49,11 @@ public class QrmBotCommand : Command
         perl.Start();
         await perl.WaitForExitAsync();
         string output = await perl.StandardOutput.ReadToEndAsync() + await perl.StandardError.ReadToEndAsync();
-        await Slack.PostMessage(new ChatMessage
+        await Client.Chat.PostMessage(new Message
         {
-            Channel = webhookMessage.ChannelId,
-            Text = output,
-            Username = slackUser.Profile.DisplayName,
-            IconUrl = slackUser.Profile.ImageOriginal
+            Username = "QRMBot",
+            Channel = command.ChannelId,
+            Text = output
         });
     }
 }

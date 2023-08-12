@@ -1,48 +1,36 @@
 namespace devanewbot.Services;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using devanewbot.Models;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-using SlackDotNet.Webhooks;
+using SlackNet;
+using SlackNet.Blocks;
+using SlackNet.Interaction;
+using SlackNet.WebApi;
 
-public class GifCommand : Command
+public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blocks.ButtonAction>
 {
     private Random Random = new Random();
+    protected IConfiguration Configuration { get; }
+    protected ISlackApiClient Client { get; }
+    protected ILogger<GifCommand> Logger { get; }
 
-    public GifCommand(Slack slack, IConfiguration configuration, ILogger<GifCommand> logger) : base("jif", slack, configuration, logger)
+    public GifCommand(ISlackApiClient client, IConfiguration configuration, ILogger<GifCommand> logger)
     {
+        Client = client;
+        Configuration = configuration;
+        Logger = logger;
     }
 
     private string SearchUri { get; set; } = "https://api.cognitive.microsoft.com/bing/v7.0/images/search";
 
-    /// <summary>
-    /// Sends a gif to Slack as the user that requested the gif.
-    /// </summary>
-    /// <param name="webhookMessage"></param>
-    /// <seealso cref="Command.HandleMessage(WebhookMessage)"/>
-    /// <returns></returns>
-    protected override async Task HandleMessage(WebhookMessage webhookMessage)
+    public async Task<string> Response(SlashCommand command)
     {
-        var slackUser = await Slack.GetUser(webhookMessage.UserId);
-        var url = await Response(webhookMessage);
-        await SendGif(webhookMessage.ChannelId,
-            slackUser.Profile.DisplayName,
-            slackUser.Profile.ImageOriginal,
-            webhookMessage.UserId,
-            webhookMessage.Text,
-            url);
-    }
-
-    public async Task<string> Response(WebhookMessage webhookMessage)
-    {
-        return await ImageSearch(webhookMessage.Text);
+        return await ImageSearch(command.Text);
     }
 
     private async Task<string> ImageSearch(string searchTerm, bool random = false)
@@ -66,44 +54,6 @@ public class GifCommand : Command
     }
 
     /// <summary>
-    /// Handles interactive messages. Used for button presses on previews.
-    /// </summary>
-    /// <param name="interactiveMessage"></param>
-    /// <returns></returns>
-    protected override async Task HandleInteractive(InteractiveMessage interactiveMessage)
-    {
-        if (Slack.ValidInteractiveMessage(interactiveMessage))
-        {
-            var action = interactiveMessage.Actions[0];
-
-            var slackUser = await Slack.GetUser(interactiveMessage.User.Id);
-            if (action.Name == "post")
-            {
-                await Slack.PostMessage(new ChatMessage
-                {
-                    Channel = interactiveMessage.Channel.Id,
-                    Username = slackUser.Profile.DisplayName,
-                    Text = action.Value,
-                    IconUrl = slackUser.Profile.ImageOriginal,
-                    User = interactiveMessage.User.Id,
-                });
-            }
-            else if (action.Name == "random")
-            {
-                var url = await ImageSearch(action.Value, true);
-                await SendGif(interactiveMessage.Channel.Id,
-                    slackUser.Profile.DisplayName,
-                    slackUser.Profile.ImageOriginal,
-                    slackUser.Id,
-                    action.Value,
-                    url);
-            }
-
-            await Slack.DeleteResponse(interactiveMessage.ResponseUrl.ToString());
-        }
-    }
-
-    /// <summary>
     /// Handles the work of actually sending the Gif ephemeral dialog
     /// </summary>
     /// <param name="channelId"></param>
@@ -115,48 +65,91 @@ public class GifCommand : Command
     /// <returns></returns>
     private async Task SendGif(string channelId, string displayName, Uri iconUrl, string userId, string text, string gifUrl)
     {
-        await Slack.PostMessage(new ChatMessage
+        await Client.Chat.PostEphemeral(userId, new Message
         {
             Channel = channelId,
             Username = displayName,
             Text = "Can do! :cando:",
-            IconUrl = iconUrl,
-            User = userId,
-            Attachments = new List<ChatAttachment>
+            IconUrl = iconUrl.ToString(),
+            Blocks = new Block[] {
+                new ImageBlock
                 {
-                    new ChatAttachment
+                    ImageUrl = gifUrl,
+                    AltText = text
+                },
+                new ActionsBlock
+                {
+                    Elements =
                     {
-                        Text = text,
-                        CallbackId = "jif",
-                        ImageUrl = gifUrl,
-                        Actions = new List<ChatAction>()
+                        new SlackNet.Blocks.Button
                         {
-                            new ChatAction
-                            {
-                                Type = "button",
-                                Name = "post",
-                                Text = "Post",
-                                Value = gifUrl,
-                                Style = "primary"
-                            },
-                            new ChatAction
-                            {
-                                Type = "button",
-                                Name = "random",
-                                Text = "Hit me baby one more time!",
-                                Value = text,
-                            },
-                            new ChatAction
-                            {
-                                Type = "button",
-                                Name = "cancel",
-                                Text = "Nevermind",
-                                Value = "cancel",
-                                Style = "danger"
-                            }
+
+                            ActionId = "post",
+                            Text = "Post",
+                            Value = gifUrl,
+                            Style = ButtonStyle.Primary
+                        },
+                        new SlackNet.Blocks.Button
+                        {
+                            ActionId = "random",
+                            Text = "Hit me baby one more time!",
+                            Value = text,
+                        },
+                        new SlackNet.Blocks.Button
+                        {
+                            ActionId = "cancel",
+                            Text = "Nevermind",
+                            Value = "cancel",
+                            Style = ButtonStyle.Danger
                         }
                     }
                 }
-        }, true);
+            }
+        });
+    }
+
+    public async Task<SlashCommandResponse> Handle(SlashCommand command)
+    {
+        var slackUser = await Client.Users.Info(command.UserId);
+        var url = await Response(command);
+        await SendGif(
+            command.ChannelId,
+            slackUser.Profile.DisplayName,
+            new Uri(slackUser.Profile.ImageOriginal),
+            command.UserId,
+            command.Text,
+            url);
+        return null;
+    }
+
+    public async Task Handle(ButtonAction action, BlockActionRequest request)
+    {
+        Logger.LogInformation("Action: {}", action.ActionId);
+        var slackUser = await Client.Users.Info(request.User.Id);
+        if (action.ActionId == "post")
+        {
+            await Client.Chat.PostMessage(new Message
+            {
+                Channel = request.Channel.Id,
+                Username = slackUser.Profile.DisplayName,
+                Parse = ParseMode.Full,
+                Text = action.Value,
+                UnfurlLinks = true,
+                IconUrl = slackUser.Profile.ImageOriginal,
+            });
+        }
+        else if (action.ActionId == "random")
+        {
+            var url = await ImageSearch(action.Value, true);
+            await SendGif(request.Channel.Id,
+                slackUser.Profile.DisplayName,
+                new Uri(slackUser.Profile.ImageOriginal),
+                slackUser.Id,
+                action.Value,
+                url);
+        }
+
+
+        await Client.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
     }
 }

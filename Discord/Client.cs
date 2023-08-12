@@ -5,23 +5,22 @@ using System.Threading.Tasks;
 using global::Discord.Rest;
 using global::Discord.WebSocket;
 using Microsoft.Extensions.Options;
-using SlackDotNet;
-using SlackDotNet.Payloads;
+using SlackNet;
 
 public class Client : IDisposable
 {
     protected DiscordSocketClient SocketClient { get; }
 
-    protected Slack Slack { get; }
+    protected ISlackApiClient SlackClient { get; }
 
     protected DiscordOptions DiscordOptions { get; }
     private static readonly string ChannelId = "C035Z122Z0F";
 
-    public Client(Slack slack,
+    public Client(ISlackApiClient slackClient,
         IOptions<DiscordOptions> discordOptions)
     {
         SocketClient = new DiscordSocketClient();
-        Slack = slack;
+        SlackClient = slackClient;
         DiscordOptions = discordOptions.Value;
     }
 
@@ -59,12 +58,12 @@ public class Client : IDisposable
 
     protected async Task SendMessage(string action, RestGuildUser user, SocketVoiceChannel channel)
     {
-        var message = new ChatMessage()
+        var message = new SlackNet.WebApi.Message()
         {
             Channel = ChannelId,
             Text = @$"{user.DisplayName} has {action} #{channel.Name}"
         };
 
-        await Slack.PostMessage(message);
+        await SlackClient.Chat.PostMessage(message);
     }
 }

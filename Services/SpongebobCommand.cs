@@ -3,36 +3,20 @@ namespace devanewbot.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-using SlackDotNet.Webhooks;
+using SlackNet;
+using SlackNet.Interaction;
 
-public class SpongebobCommand : Command
+public class SpongebobCommand : ISlashCommandHandler
 {
     private Random Random = new Random();
+    protected ISlackApiClient Client { get; }
+    protected ILogger<SpongebobCommand> Logger { get; }
 
-    public SpongebobCommand(Slack slack, IConfiguration configuration, ILogger<SpongebobCommand> logger) : base("spongebob", slack, configuration, logger)
+    public SpongebobCommand(ISlackApiClient client, ILogger<SpongebobCommand> logger)
     {
-    }
-
-    /// <summary>
-    /// Sends a spongebobified message to Slack as the user that requested.
-    /// </summary>
-    /// <param name="webhookMessage"></param>
-    /// <seealso cref="Command.HandleMessage(WebhookMessage)"/>
-    /// <returns></returns>
-    protected override async Task HandleMessage(WebhookMessage webhookMessage)
-    {
-        var slackUser = await Slack.GetUser(webhookMessage.UserId);
-        await Slack.PostMessage(new ChatMessage
-        {
-            Channel = webhookMessage.ChannelId,
-            Username = slackUser.Profile.DisplayName,
-            Text = Response(webhookMessage.Text),
-            IconUrl = slackUser.Profile.ImageOriginal
-        });
+        Client = client;
+        Logger = logger;
     }
 
     public string Response(string text)
@@ -51,5 +35,18 @@ public class SpongebobCommand : Command
     private char Spongebobify(char c)
     {
         return Random.Next(2) == 0 ? Char.ToUpper(c) : Char.ToLower(c);
+    }
+
+    public async Task<SlashCommandResponse> Handle(SlashCommand command)
+    {
+        var user = await Client.Users.Info(command.UserId);
+        _ = Client.Chat.PostMessage(new SlackNet.WebApi.Message
+        {
+            Channel = command.ChannelId,
+            Username = command.UserName,
+            IconUrl = user.Profile.Image192,
+            Text = Response(command.Text),
+        });
+        return null;
     }
 }

@@ -5,15 +5,15 @@ using System.IO;
 using System.Threading.Tasks;
 using Flurl.Http;
 using ImageMagick;
-using SlackDotNet;
+using SlackNet;
 
 public class PropagationService
 {
-    public readonly Slack Slack;
+    protected ISlackApiClient Client { get; }
 
-    public PropagationService(Slack slack)
+    public PropagationService(ISlackApiClient client)
     {
-        Slack = slack;
+        Client = client;
     }
 
     private const string ChannelId = "C3XHU6W9H";
@@ -28,6 +28,6 @@ public class PropagationService
         image.Format = MagickFormat.Png64;
         await image.WriteAsync(memoryStream);
         memoryStream.Seek(0, SeekOrigin.Begin);
-        await Slack.UploadFile(memoryStream, $"solar101vhf-{timeStamp}.png", "image/png", new[] { ChannelId });
+        await Client.Files.Upload(memoryStream, "image/png", $"solar101vhf-{timeStamp}.png", channels: new[] { ChannelId });
     }
 }

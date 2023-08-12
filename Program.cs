@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using AspNetCore.ReCaptcha;
 using devanewbot.Authorization;
 using devanewbot.HostedServices;
@@ -18,6 +19,8 @@ using RollbarDotNet.Core;
 using RollbarDotNet.Logger;
 using SlackDotNet;
 using SlackDotNet.Options;
+using SlackNet.AspNetCore;
+using SlackNet.Blocks;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
@@ -31,15 +34,31 @@ var configuration = builder.Configuration;
 
 builder.Services
     .AddSingleton<Slack>()
-    .AddSingleton<SlackSocket>()
-    .AddSingleton<SpongebobCommand>()
-    .AddSingleton<GifCommand>()
-    .AddSingleton<StallmanCommand>()
     .AddSingleton<Client>()
-    .AddSingleton<ICommandService, CommandService>()
+    .AddSlackNet(c =>
+    {
+        c
+            .UseApiToken(configuration.GetSection("Slack").GetValue<string>("OauthToken"))
+            .UseAppLevelToken(configuration.GetSection("SlackSocket").GetValue<string>("AppToken"));
+
+        c
+            .RegisterSlashCommandHandler<SpongebobCommand>("/spongebob")
+            .RegisterSlashCommandHandler<GifCommand>("/jif")
+            .RegisterBlockActionHandler<ButtonAction, GifCommand>("post")
+            .RegisterBlockActionHandler<ButtonAction, GifCommand>("random")
+            .RegisterBlockActionHandler<ButtonAction, GifCommand>("cancel")
+            .RegisterSlashCommandHandler<StallmanCommand>("/stallman");
+
+        // "No!" says the man in Github, "you should port the code"
+        //  I choose the lazy solution, I choose... this.
+        Directory.EnumerateFiles("qrmbot/lib")
+            .Where(f => !f.EndsWith(".csv") && !f.EndsWith("pm"))
+            .Select(f => f.Split("/").Last().Replace(".pl", string.Empty))
+            .ToList()
+            .ForEach(f => c.RegisterSlashCommandHandler<QrmBotCommand>($"/{f}"));
+    })
     .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
-    .Configure<SlackSocketOptions>(o => configuration.GetSection("SlackSocket").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
     .Configure<ForwardedHeadersOptions>(options =>
     {
@@ -61,10 +80,16 @@ builder.Services
     .AddHostedService<SlackBotHostedService>()
     .AddHostedService<HangfireHostedService>();
 
+
 var app = builder.Build();
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 loggerFactory.AddRollbarDotNetLogger(app.Services);
 app
+    .UseSlackNet(c =>
+        c
+            .UseSigningSecret(configuration.GetSection("Slack").GetValue<string>("VerificationToken"))
+            .UseSocketMode(true)
+    )
     .UseForwardedHeaders()
     .UseHsts()
     .UseHttpsRedirection()
@@ -98,5 +123,18 @@ app
         endpoints.MapControllers();
         endpoints.MapFallbackToFile("index.html");
     });
+
+// This is literally the worst thing I've done with this project, even worse than just running perl inline
+//  YES THIS WILL FUCK WITH YOUR HOME DIRECTORY BLAME QRMBOT
+//  That or just don't fill out QrmBot:Settings
+foreach (var setting in configuration.GetSection("QrmBot:Settings").GetChildren())
+{
+    var configFile = $".{setting.Key.ToLower()}";
+    var content = setting.GetChildren()
+        .Select(c => $"{c.Key} = \"{c.Value}\";")
+        .Aggregate((c1, c2) => $"{c1}\n{c2}");
+    var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    await File.WriteAllTextAsync($"{homeDir}/{configFile}", content);
+}
 
 await app.RunAsync();
