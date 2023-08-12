@@ -131,7 +131,7 @@ foreach (var setting in configuration.GetSection("QrmBot:Settings").GetChildren(
 {
     var configFile = $".{setting.Key.ToLower()}";
     var content = setting.GetChildren()
-        .Select(c => $"{c.Key} = \"{c.Value}\";")
+        .Select(c => $"${c.Key} = \"{c.Value}\";")
         .Aggregate((c1, c2) => $"{c1}\n{c2}");
     var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     await File.WriteAllTextAsync($"{homeDir}/{configFile}", content);

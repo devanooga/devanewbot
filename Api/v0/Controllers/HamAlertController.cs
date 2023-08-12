@@ -2,7 +2,6 @@ namespace devanewbot.Api.v0.Controllers;
 
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using SlackDotNet;
 using SlackNet;
 using SlackNet.WebApi;
 
