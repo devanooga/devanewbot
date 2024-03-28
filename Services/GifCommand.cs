@@ -20,7 +20,7 @@ public class GifCommand : Command
     {
     }
 
-    private string SearchUri { get; set; } = "https://api.cognitive.microsoft.com/bing/v7.0/images/search";
+    private string SearchUri { get; set; } = "https://api.bing.microsoft.com/v7.0/images/search";
 
     /// <summary>
     /// Sends a gif to Slack as the user that requested the gif.
