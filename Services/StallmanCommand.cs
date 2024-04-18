@@ -4,37 +4,23 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SlackDotNet;
-using SlackDotNet.Payloads;
-using SlackDotNet.Webhooks;
+using SlackNet;
+using SlackNet.Interaction;
+using SlackNet.WebApi;
 
-public class StallmanCommand : Command
+public class StallmanCommand : ISlashCommandHandler
 {
     private Random Random = new Random();
     private const string Gallery = "https://stallman.org/photos/rms-working/";
 
-    public StallmanCommand(Slack slack, IConfiguration configuration, ILogger<StallmanCommand> logger) : base("stallman", slack, configuration, logger)
-    {
-    }
+    protected ISlackApiClient Client { get; }
+    protected ILogger<StallmanCommand> Logger { get; }
 
-    /// <summary>
-    /// Sends a random Stallman image to Slack
-    /// </summary>
-    /// <param name="webhookMessage"></param>
-    /// <seealso cref="Command.HandleMessage(WebhookMessage)"/>
-    /// <returns></returns>
-    protected override async Task HandleMessage(WebhookMessage webhookMessage)
+    public StallmanCommand(ISlackApiClient client, ILogger<StallmanCommand> logger)
     {
-        var slackUser = await Slack.GetUser(webhookMessage.UserId);
-        await Slack.PostMessage(new ChatMessage
-        {
-            Channel = webhookMessage.ChannelId,
-            Username = slackUser.Profile.DisplayName,
-            Text = ResponseAsync(webhookMessage.Text),
-            IconUrl = slackUser.Profile.ImageOriginal
-        });
+        Client = client;
+        Logger = logger;
     }
 
     public string ResponseAsync(string text)
@@ -54,5 +40,21 @@ public class StallmanCommand : Command
                 .First()
                 .GetAttributeValue("src", "")
                 .Substring(3);
+    }
+
+    public async Task<SlashCommandResponse> Handle(SlashCommand command)
+    {
+        var slackUser = await Client.Users.Info(command.UserId);
+        await Client.Chat.PostMessage(new Message
+        {
+            Channel = command.ChannelId,
+            Username = slackUser.Profile.DisplayName,
+            Text = ResponseAsync(command.Text),
+            Parse = ParseMode.Full,
+            UnfurlMedia = true,
+            UnfurlLinks = true,
+            IconUrl = slackUser.Profile.ImageOriginal
+        });
+        return null;
     }
 }

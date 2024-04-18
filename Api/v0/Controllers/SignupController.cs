@@ -31,12 +31,12 @@ public class SignupController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetToken()
+    public Task<IActionResult> GetToken()
     {
-        return Ok(new
+        return Task.FromResult<IActionResult>(Ok(new
         {
             Token = ReCaptchaSettings.SiteKey
-        });
+        }));
     }
 
     [HttpPost]
