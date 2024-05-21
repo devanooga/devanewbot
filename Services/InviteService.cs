@@ -1,0 +1,113 @@
+namespace devanewbot.Services;
+
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SlackDotNet;
+using SlackNet;
+using SlackNet.Blocks;
+using SlackNet.Interaction;
+using SlackNet.WebApi;
+using WebSocket4Net.Command;
+
+public class InviteService : IBlockActionHandler<ButtonAction>
+{
+    protected Slack Slack { get; }
+
+    protected ISlackApiClient SlackApiClient { get; }
+    protected ILogger<InviteService> Logger
+    { get; }
+
+    private string Channel = "C074VF1PC7K";
+
+    public InviteService(Slack slack,
+         ISlackApiClient slackApiClient,
+         ILogger<InviteService> logger)
+    {
+        Slack = slack;
+        SlackApiClient = slackApiClient;
+        Logger = logger;
+    }
+
+    public async Task CreateInvite(string email, string ip)
+    {
+        await SlackApiClient.Chat.PostMessage(new Message
+        {
+            Channel = Channel,
+            Blocks = new Block[] {
+                new SectionBlock
+                {
+                    Text = new Markdown($"Sending invite to {email} from IP {ip}")
+                },
+                new ActionsBlock
+                {
+                    Elements =
+                    {
+                        new SlackNet.Blocks.Button
+                        {
+
+                            ActionId = "approve",
+                            Text = "Approve Account",
+                            Value = email,
+                            Style = ButtonStyle.Default
+                        },
+                        new SlackNet.Blocks.Button
+                        {
+
+                            ActionId = "disable",
+                            Text = "Disable Account",
+                            Value = email,
+                            Style = ButtonStyle.Danger
+                        },
+                    }
+                }
+            }
+        });
+    }
+
+    public async Task Handle(ButtonAction action, BlockActionRequest request)
+    {
+        Logger.LogInformation("Action: {}", action.ActionId);
+        var commandingUser = await SlackApiClient.Users.Info(request.User.Id);
+        switch (action.ActionId)
+        {
+            case "disable":
+                var slackUser = await SlackApiClient.Users.LookupByEmail(action.Value);
+                await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
+                await Slack.DisableUser(slackUser.Id);
+                await SlackApiClient.Chat.PostMessage(new Message
+                {
+                    Channel = request.Channel.Id,
+                    Parse = ParseMode.Full,
+                    Text = $"{commandingUser.Profile.DisplayName} disabled {action.Value}",
+                    UnfurlLinks = true,
+                });
+                break;
+            case "approve":
+                var (success, error) = await Slack.InviteUser(action.Value);
+                await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
+                if (!success)
+                {
+                    await SlackApiClient.Chat.PostMessage(new Message
+                    {
+                        Channel = request.Channel.Id,
+                        Parse = ParseMode.Full,
+                        Text = $"{commandingUser.Profile.DisplayName} approved {action.Value} but we had an error: {error}",
+                        UnfurlLinks = true,
+                    });
+                }
+                else
+                {
+                    await SlackApiClient.Chat.PostMessage(new Message
+                    {
+                        Channel = request.Channel.Id,
+                        Parse = ParseMode.Full,
+                        Text = $"{commandingUser.Profile.DisplayName} approved {action.Value}",
+                        UnfurlLinks = true,
+                    });
+                }
+
+                break;
+        }
+    }
+
+}

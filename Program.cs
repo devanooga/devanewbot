@@ -35,6 +35,7 @@ var configuration = builder.Configuration;
 builder.Services
     .AddSingleton<Slack>()
     .AddSingleton<Client>()
+    .AddTransient<InviteService>()
     .AddSlackNet(c =>
     {
         c
@@ -47,6 +48,8 @@ builder.Services
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("post")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("random")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("cancel")
+            .RegisterBlockActionHandler<ButtonAction, InviteService>("approve")
+            .RegisterBlockActionHandler<ButtonAction, InviteService>("disable")
             .RegisterSlashCommandHandler<StallmanCommand>("/stallman");
 
         // "No!" says the man in Github, "you should port the code"
