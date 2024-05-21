@@ -1,4 +1,6 @@
 namespace SlackDotNet;
+
+using System.Net.Http;
 using System.Threading.Tasks;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
@@ -27,6 +29,25 @@ public class Slack
                 token = Options.LegacyToken,
                 email,
                 set_active = true
+            });
+
+        var body = await response.GetStringAsync();
+        var json = JObject.Parse(body);
+        if (!json["ok"].Value<bool>())
+        {
+            return (false, json["error"].ToString());
+        }
+
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string Error)> DisableUser(string userId)
+    {
+        var response = await $"https://devanooga.slack.com/api/users.admin.setInactive"
+            .SendJsonAsync(HttpMethod.Delete, new
+            {
+                token = Options.LegacyToken,
+                user = userId
             });
 
         var body = await response.GetStringAsync();
