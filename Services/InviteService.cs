@@ -71,14 +71,12 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         switch (action.ActionId)
         {
             case "disable":
-                var slackUser = await SlackApiClient.Users.LookupByEmail(action.Value);
                 await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
-                await Slack.DisableUser(slackUser.Id);
                 await SlackApiClient.Chat.PostMessage(new Message
                 {
                     Channel = request.Channel.Id,
                     Parse = ParseMode.Full,
-                    Text = $"{commandingUser.Profile.DisplayName} disabled {action.Value}",
+                    Text = $"{commandingUser.Profile.DisplayName} denied invite for {action.Value}",
                     UnfurlLinks = true,
                 });
                 break;
