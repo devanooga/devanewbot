@@ -1,5 +1,7 @@
 namespace devanewbot.Services;
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SlackDotNet;
@@ -30,6 +32,12 @@ public class InviteService : IBlockActionHandler<ButtonAction>
 
     public async Task CreateInvite(string email, string ip)
     {
+        var payload = JsonSerializer.Serialize(new SignupPayload
+        {
+            Email = email,
+            Ip = ip
+        });
+
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = Channel,
@@ -47,7 +55,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
 
                             ActionId = "approve",
                             Text = "Approve Account",
-                            Value = email,
+                            Value = payload,
                             Style = ButtonStyle.Default
                         },
                         new SlackNet.Blocks.Button
@@ -55,7 +63,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
 
                             ActionId = "disable",
                             Text = "Disable Account",
-                            Value = email,
+                            Value = payload,
                             Style = ButtonStyle.Danger
                         },
                     }
@@ -68,6 +76,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
     {
         Logger.LogInformation("Action: {}", action.ActionId);
         var commandingUser = await SlackApiClient.Users.Info(request.User.Id);
+        var signup = JsonSerializer.Deserialize<SignupPayload>(action.Value);
         switch (action.ActionId)
         {
             case "disable":
@@ -76,12 +85,12 @@ public class InviteService : IBlockActionHandler<ButtonAction>
                 {
                     Channel = request.Channel.Id,
                     Parse = ParseMode.Full,
-                    Text = $"{commandingUser.Profile.DisplayName} denied invite for {action.Value}",
+                    Text = $"{commandingUser.Profile.DisplayName} denied invite for {signup.Email} from {signup.Ip}",
                     UnfurlLinks = true,
                 });
                 break;
             case "approve":
-                var (success, error) = await Slack.InviteUser(action.Value);
+                var (success, error) = await Slack.InviteUser(signup.Email);
                 await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
                 if (!success)
                 {
@@ -89,7 +98,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
                     {
                         Channel = request.Channel.Id,
                         Parse = ParseMode.Full,
-                        Text = $"{commandingUser.Profile.DisplayName} approved {action.Value} but we had an error: {error}",
+                        Text = $"{commandingUser.Profile.DisplayName} approved {signup.Email} from {signup.Ip} but we had an error: {error}",
                         UnfurlLinks = true,
                     });
                 }
@@ -99,13 +108,19 @@ public class InviteService : IBlockActionHandler<ButtonAction>
                     {
                         Channel = request.Channel.Id,
                         Parse = ParseMode.Full,
-                        Text = $"{commandingUser.Profile.DisplayName} approved {action.Value}",
+                        Text = $"{commandingUser.Profile.DisplayName} approved {signup.Email} from {signup.Ip}",
                         UnfurlLinks = true,
                     });
                 }
 
                 break;
         }
+    }
+
+    public class SignupPayload
+    {
+        public string Email { get; set; }
+        public string Ip { get; set; }
     }
 
 }
