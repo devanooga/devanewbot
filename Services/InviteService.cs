@@ -53,16 +53,16 @@ public class InviteService : IBlockActionHandler<ButtonAction>
                         new SlackNet.Blocks.Button
                         {
 
-                            ActionId = "approve",
-                            Text = "Approve Account",
+                            ActionId = "approve_invite",
+                            Text = "Approve Invite",
                             Value = payload,
                             Style = ButtonStyle.Default
                         },
                         new SlackNet.Blocks.Button
                         {
 
-                            ActionId = "disable",
-                            Text = "Disable Account",
+                            ActionId = "decline_invite",
+                            Text = "Decline Invite",
                             Value = payload,
                             Style = ButtonStyle.Danger
                         },
@@ -79,7 +79,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         var signup = JsonSerializer.Deserialize<SignupPayload>(action.Value);
         switch (action.ActionId)
         {
-            case "disable":
+            case "decline_invite":
                 await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
                 await SlackApiClient.Chat.PostMessage(new Message
                 {
@@ -89,7 +89,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
                     UnfurlLinks = true,
                 });
                 break;
-            case "approve":
+            case "approve_invite":
                 var (success, error) = await Slack.InviteUser(signup.Email);
                 await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
                 if (!success)

@@ -48,8 +48,8 @@ builder.Services
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("post")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("random")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("cancel")
-            .RegisterBlockActionHandler<ButtonAction, InviteService>("approve")
-            .RegisterBlockActionHandler<ButtonAction, InviteService>("disable")
+            .RegisterBlockActionHandler<ButtonAction, InviteService>("approve_invite")
+            .RegisterBlockActionHandler<ButtonAction, InviteService>("decline_invite")
             .RegisterSlashCommandHandler<StallmanCommand>("/stallman");
 
         // "No!" says the man in Github, "you should port the code"
