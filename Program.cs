@@ -33,6 +33,7 @@ builder.Configuration
 var configuration = builder.Configuration;
 
 builder.Services
+    .AddHttpClient()
     .AddSingleton<Slack>()
     .AddSingleton<Client>()
     .AddTransient<InviteService>()
