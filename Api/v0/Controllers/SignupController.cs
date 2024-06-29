@@ -5,13 +5,7 @@ using AspNetCore.ReCaptcha;
 using devanewbot.Api.v0.Models;
 using devanewbot.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SlackDotNet;
-using SlackNet;
-using SlackNet.Blocks;
-using SlackNet.Interaction;
-using SlackNet.WebApi;
 
 [Route("/api/v0/signup")]
 public class SignupController : Controller
