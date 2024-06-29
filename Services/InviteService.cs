@@ -74,30 +74,30 @@ public class InviteService : IBlockActionHandler<ButtonAction>
             Channel = Channel,
             Blocks = new Block[]
             {
-                    new SectionBlock
+                new SectionBlock
+                {
+                    Text = new Markdown(message)
+                },
+                new ActionsBlock
+                {
+                    Elements = new IActionElement[]
                     {
-                        Text = new Markdown(message)
-                    },
-                    new ActionsBlock
-                    {
-                        Elements = new IActionElement[]
+                        new SlackNet.Blocks.Button
                         {
-                            new SlackNet.Blocks.Button
-                            {
-                                ActionId = "approve_invite",
-                                Text = "Approve Invite",
-                                Value = payload,
-                                Style = ButtonStyle.Primary
-                            },
-                            new SlackNet.Blocks.Button
-                            {
-                                ActionId = "decline_invite",
-                                Text = "Decline Invite",
-                                Value = payload,
-                                Style = ButtonStyle.Danger
-                            }
+                            ActionId = "approve_invite",
+                            Text = "Approve Invite",
+                            Value = payload,
+                            Style = ButtonStyle.Primary
+                        },
+                        new SlackNet.Blocks.Button
+                        {
+                            ActionId = "decline_invite",
+                            Text = "Decline Invite",
+                            Value = payload,
+                            Style = ButtonStyle.Danger
                         }
                     }
+                }
             }
         });
     }
@@ -111,11 +111,11 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         {
             Logger.LogError("Failed to deserialize signup payload");
             await SlackApiClient.Chat.PostMessage(new Message
-                {
-                    Channel = request.Channel.Id,
-                    Parse = ParseMode.Full,
-                    Text = $"Failed to deserialize signup payload! Could not handle request.",
-                });
+            {
+                Channel = request.Channel.Id,
+                Parse = ParseMode.Full,
+                Text = $"Failed to deserialize signup payload! Could not handle request.",
+            });
             return;
         }
 
