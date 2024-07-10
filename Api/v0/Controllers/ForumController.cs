@@ -38,6 +38,7 @@ public class ForumController : Controller
                 "C#" => "C3XKVAJ4S",
                 "Dungeons and Dragons" => "CEWMTRQ14",
                 "Home Improvement" => "C9VDL8CMD",
+                "General" => "C01EGSCSYQY", // General is a renamed channel? It's making the lookup fail, just map it.
                 _ => throw new Exception($"{model.Data.Forum.Title} not mapped to a Slack channel")
             };
         var message = $"A new thread has been posted by {model.Data.Username}: {Link.Url(model.Data.ViewUrl, model.Data.Title)}";
