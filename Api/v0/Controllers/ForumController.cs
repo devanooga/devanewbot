@@ -27,7 +27,7 @@ public class ForumController : Controller
     [HttpPost("webhook")]
     public async Task<IActionResult> WebHook([FromBody] WebHookModel model)
     {
-        var conversations = await SlackApiClient.Conversations.List();
+        var conversations = await SlackApiClient.Conversations.List(true, 1000, [ConversationType.PublicChannel, ConversationType.PrivateChannel]);
         var channel = conversations.Channels.FirstOrDefault(c => c.Name.Equals(model.Data.Forum.Title, StringComparison.InvariantCultureIgnoreCase))?.Id
             ?? model.Data.Forum.Title switch
             {

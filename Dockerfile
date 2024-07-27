@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 
 WORKDIR /app
 EXPOSE 5010
@@ -22,7 +22,7 @@ RUN npm ci
 RUN export NODE_OPTIONS=--openssl-legacy-provider && \
     npm run build 
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS publish
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS publish
 WORKDIR /src
 COPY . .
 WORKDIR "/src"
