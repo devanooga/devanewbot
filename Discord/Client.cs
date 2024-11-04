@@ -46,6 +46,12 @@ public class Client : IDisposable
         }
 
         var restUser = await SocketClient.Rest.GetGuildUserAsync(guildUser.Guild.Id, guildUser.Id);
+
+        if (restUser.IsBot)
+        {
+            return;
+        }
+
         if (oldVoiceState.VoiceChannel == null && newVoiceState.VoiceChannel != null)
         {
             await SendMessage("joined", restUser, newVoiceState.VoiceChannel);
