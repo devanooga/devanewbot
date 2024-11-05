@@ -47,8 +47,9 @@ public class Client : IDisposable
 
         var restUser = await SocketClient.Rest.GetGuildUserAsync(guildUser.Guild.Id, guildUser.Id);
 
-        if (restUser.IsBot)
+        if (restUser.IsBot || restUser.DisplayName.StartsWith("N8SAM"))
         {
+            // Ignore bots and sam's echolink bridge user
             return;
         }
 
