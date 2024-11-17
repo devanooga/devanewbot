@@ -6,19 +6,27 @@ using devanewbot.Services;
 using Hangfire;
 using Microsoft.Extensions.Hosting;
 
-public class HangfireHostedService : IHostedService
+public class HangfireHostedService(IRecurringJobManager recurringJobManager) : IHostedService
 {
-    protected IRecurringJobManager RecurringJobManager { get; }
-
-
-    public HangfireHostedService(IRecurringJobManager recurringJobManager)
+    private readonly RecurringJobOptions RecurringJobOptions = new RecurringJobOptions
     {
-        RecurringJobManager = recurringJobManager;
-    }
+        TimeZone = System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
+    };
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        RecurringJobManager.AddOrUpdate<PropagationService>("Ham Propagation", p => p.PostMessage(), "0 9 * * *", new RecurringJobOptions { TimeZone = System.TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time") });
+        recurringJobManager.AddOrUpdate<PropagationService>(
+            "Ham Propagation",
+            p => p.PostMessage(),
+            "0 9 * * *",
+            RecurringJobOptions);
+
+        recurringJobManager.AddOrUpdate<IChannelBanService>(
+            "Check Ban Expirations",
+            cbs => cbs.CheckExpirations(),
+            Cron.Hourly,
+            RecurringJobOptions);
+
         return Task.CompletedTask;
     }
 
