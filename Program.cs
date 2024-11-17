@@ -32,6 +32,8 @@ builder.Configuration
 
 var configuration = builder.Configuration;
 
+var suffix = configuration.GetSection("SlackSocket").GetValue<string>("CommandSuffix");
+
 builder.Services
     .AddHttpClient()
     .AddSingleton<Slack>()
@@ -40,18 +42,19 @@ builder.Services
     .AddSlackNet(c =>
     {
         c
+            .UseSigningSecret(configuration.GetSection("Slack").GetValue<string>("VerificationToken")!)
             .UseApiToken(configuration.GetSection("Slack").GetValue<string>("OauthToken"))
             .UseAppLevelToken(configuration.GetSection("SlackSocket").GetValue<string>("AppToken"));
 
         c
-            .RegisterSlashCommandHandler<SpongebobCommand>("/spongebob")
+            .RegisterSlashCommandHandler<SpongebobCommand>("/spongebob" + suffix)
             .RegisterSlashCommandHandler<GifCommand>("/jif")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("post")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("random")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("cancel")
             .RegisterBlockActionHandler<ButtonAction, InviteService>("approve_invite")
             .RegisterBlockActionHandler<ButtonAction, InviteService>("decline_invite")
-            .RegisterSlashCommandHandler<StallmanCommand>("/stallman");
+            .RegisterSlashCommandHandler<StallmanCommand>("/stallman" + suffix);
 
         // "No!" says the man in Github, "you should port the code"
         //  I choose the lazy solution, I choose... this.
@@ -90,9 +93,7 @@ var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 loggerFactory.AddRollbarDotNetLogger(app.Services);
 app
     .UseSlackNet(c =>
-        c
-            .UseSigningSecret(configuration.GetSection("Slack").GetValue<string>("VerificationToken"))
-            .UseSocketMode(true)
+        c.UseSocketMode(true)
     )
     .UseForwardedHeaders()
     .UseHsts()
