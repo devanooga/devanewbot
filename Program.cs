@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using AspNetCore.ReCaptcha;
 using devanewbot.Authorization;
+using devanewbot.Entities;
 using devanewbot.HostedServices;
 using devanewbot.Services;
 using Devanewbot.Discord;
@@ -11,6 +12,7 @@ using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,6 +23,7 @@ using SlackDotNet;
 using SlackDotNet.Options;
 using SlackNet.AspNetCore;
 using SlackNet.Blocks;
+using SlackNet.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
@@ -32,26 +35,37 @@ builder.Configuration
 
 var configuration = builder.Configuration;
 
+var suffix = configuration.GetSection("SlackSocket").GetValue<string>("CommandSuffix");
+
 builder.Services
+    .AddDbContext<DevanewbotContext>(options =>
+        options.UseNpgsql(configuration.GetConnectionString("DevanewbotContext")))
     .AddHttpClient()
     .AddSingleton<Slack>()
     .AddSingleton<Client>()
     .AddTransient<InviteService>()
+    .AddTransient<IChannelBanService, ChannelBanService>()
     .AddSlackNet(c =>
     {
         c
+            .UseSigningSecret(configuration.GetSection("Slack").GetValue<string>("VerificationToken")!)
             .UseApiToken(configuration.GetSection("Slack").GetValue<string>("OauthToken"))
             .UseAppLevelToken(configuration.GetSection("SlackSocket").GetValue<string>("AppToken"));
 
         c
-            .RegisterSlashCommandHandler<SpongebobCommand>("/spongebob")
+            .RegisterSlashCommandHandler<SpongebobCommand>("/spongebob" + suffix)
             .RegisterSlashCommandHandler<GifCommand>("/jif")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("post")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("random")
             .RegisterBlockActionHandler<ButtonAction, GifCommand>("cancel")
             .RegisterBlockActionHandler<ButtonAction, InviteService>("approve_invite")
             .RegisterBlockActionHandler<ButtonAction, InviteService>("decline_invite")
-            .RegisterSlashCommandHandler<StallmanCommand>("/stallman");
+            .RegisterSlashCommandHandler<StallmanCommand>("/stallman" + suffix)
+            .RegisterSlashCommandHandler<ChannelBanCommand>("/channel-ban" + suffix)
+            .RegisterSlashCommandHandler<RemoveBanCommand>("/remove-channel-ban" + suffix)
+            .RegisterViewSubmissionHandler<ChannelBanModalHandler>(ChannelBanModalHandler.ModalCallbackId)
+            .RegisterViewSubmissionHandler<RemoveBanModalHandler>(RemoveBanModalHandler.ModalCallbackId)
+            .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();
 
         // "No!" says the man in Github, "you should port the code"
         //  I choose the lazy solution, I choose... this.
@@ -86,13 +100,19 @@ builder.Services
 
 
 var app = builder.Build();
+
+{
+    // Database Migrations
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<DevanewbotContext>();
+    db.Database.Migrate();
+}
+
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 loggerFactory.AddRollbarDotNetLogger(app.Services);
 app
     .UseSlackNet(c =>
-        c
-            .UseSigningSecret(configuration.GetSection("Slack").GetValue<string>("VerificationToken"))
-            .UseSocketMode(true)
+        c.UseSocketMode(true)
     )
     .UseForwardedHeaders()
     .UseHsts()
