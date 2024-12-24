@@ -9,8 +9,8 @@ using SlackNet.Blocks;
 using SlackNet.Interaction;
 using SlackNet.WebApi;
 using System;
-using SlackDotNet;
 using System.Text.Json.Serialization;
+using global::SlackDotNet;
 
 public class InviteService : IBlockActionHandler<ButtonAction>
 {

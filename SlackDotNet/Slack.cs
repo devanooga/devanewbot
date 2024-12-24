@@ -2,19 +2,14 @@ namespace SlackDotNet;
 
 using System.Net.Http;
 using System.Threading.Tasks;
+using devanewbot.SlackDotNet.Options;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
-using SlackDotNet.Options;
 
-public class Slack
+public class Slack(IOptions<SlackOptions> options)
 {
-    private SlackOptions Options { get; set; }
-
-    public Slack(IOptions<SlackOptions> options)
-    {
-        Options = options.Value;
-    }
+    private SlackOptions Options { get; set; } = options.Value;
 
     /// <summary>
     /// Deletes a message in response to an interactive command
