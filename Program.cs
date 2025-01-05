@@ -6,6 +6,7 @@ using devanewbot.Authorization;
 using devanewbot.Entities;
 using devanewbot.HostedServices;
 using devanewbot.Services;
+using devanewbot.SlackDotNet.Options;
 using Devanewbot.Discord;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -20,7 +21,6 @@ using RollbarDotNet.Configuration;
 using RollbarDotNet.Core;
 using RollbarDotNet.Logger;
 using SlackDotNet;
-using SlackDotNet.Options;
 using SlackNet.AspNetCore;
 using SlackNet.Blocks;
 using SlackNet.Events;
@@ -45,6 +45,7 @@ builder.Services
     .AddSingleton<Client>()
     .AddTransient<InviteService>()
     .AddTransient<IChannelBanService, ChannelBanService>()
+    .AddTransient<IWelcomeService, WelcomeService>()
     .AddSlackNet(c =>
     {
         c
