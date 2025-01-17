@@ -65,6 +65,8 @@ builder.Services
             .RegisterSlashCommandHandler<ChannelBanCommand>("/channel-ban" + suffix)
             .RegisterSlashCommandHandler<RemoveBanCommand>("/remove-channel-ban" + suffix)
             .RegisterSlashCommandHandler<SimpsonsCommand>("/simpsons" + suffix)
+            .RegisterSlashCommandHandler<FuturamaCommand>("/futurama" + suffix)
+            .RegisterSlashCommandHandler<RickAndMortyCommand>("/rickandmorty" + suffix)
             .RegisterViewSubmissionHandler<ChannelBanModalHandler>(ChannelBanModalHandler.ModalCallbackId)
             .RegisterViewSubmissionHandler<RemoveBanModalHandler>(RemoveBanModalHandler.ModalCallbackId)
             .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();

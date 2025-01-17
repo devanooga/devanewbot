@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using SlackNet;
 using SlackNet.Interaction;
 
-public class SimpsonsCommand(ISlackApiClient client) : RandomCartoonCommand, ISlashCommandHandler
+public class FuturamaCommand(ISlackApiClient client) : RandomCartoonCommand, ISlashCommandHandler
 {
-    private readonly Uri Frinkiac = new("https://frinkiac.com/");
+    private readonly Uri Morbotron = new("https://morbotron.com");
 
     public async Task<SlashCommandResponse> Handle(SlashCommand command)
     {
-        await SendRandomCartoonImage(Frinkiac, command, client);
+        await SendRandomCartoonImage(Morbotron, command, client);
 
         return null;
     }

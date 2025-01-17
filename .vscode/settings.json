@@ -1,7 +1,13 @@
 {
     "cSpell.words": [
         "Devanewbot",
-        "Frinkiac"
+        "Frinkiac",
+        "Futurama",
+        "Morbotron",
+        "Morty",
+        "rickandmorty",
+        "spongebob",
+        "stallman"
     ],
     "dotnet.defaultSolution": "devanewbot.sln"
 }
