@@ -64,6 +64,7 @@ builder.Services
             .RegisterSlashCommandHandler<StallmanCommand>("/stallman" + suffix)
             .RegisterSlashCommandHandler<ChannelBanCommand>("/channel-ban" + suffix)
             .RegisterSlashCommandHandler<RemoveBanCommand>("/remove-channel-ban" + suffix)
+            .RegisterSlashCommandHandler<SimpsonsCommand>("/simpsons" + suffix)
             .RegisterViewSubmissionHandler<ChannelBanModalHandler>(ChannelBanModalHandler.ModalCallbackId)
             .RegisterViewSubmissionHandler<RemoveBanModalHandler>(RemoveBanModalHandler.ModalCallbackId)
             .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();
