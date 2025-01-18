@@ -67,6 +67,7 @@ builder.Services
             .RegisterSlashCommandHandler<SimpsonsCommand>("/simpsons" + suffix)
             .RegisterSlashCommandHandler<FuturamaCommand>("/futurama" + suffix)
             .RegisterSlashCommandHandler<RickAndMortyCommand>("/rickandmorty" + suffix)
+            .RegisterSlashCommandHandler<FormalizerCommand>("/formalizer" + suffix)
             .RegisterViewSubmissionHandler<ChannelBanModalHandler>(ChannelBanModalHandler.ModalCallbackId)
             .RegisterViewSubmissionHandler<RemoveBanModalHandler>(RemoveBanModalHandler.ModalCallbackId)
             .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();
