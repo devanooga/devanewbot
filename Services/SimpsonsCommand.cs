@@ -11,7 +11,7 @@ public class SimpsonsCommand(ISlackApiClient client) : RandomCartoonCommand, ISl
 
     public async Task<SlashCommandResponse> Handle(SlashCommand command)
     {
-        await SendRandomCartoonImage(Frinkiac, command, client);
+        await SendRandomCartoonImage(Frinkiac, command, client, command.Text);
 
         return null;
     }
