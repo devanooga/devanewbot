@@ -11,7 +11,7 @@ public class FuturamaCommand(ISlackApiClient client) : RandomCartoonCommand, ISl
 
     public async Task<SlashCommandResponse> Handle(SlashCommand command)
     {
-        await SendRandomCartoonImage(Morbotron, command, client);
+        await SendRandomCartoonImage(Morbotron, command, client, command.Text);
 
         return null;
     }

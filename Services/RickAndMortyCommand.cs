@@ -11,7 +11,7 @@ public class RickAndMortyCommand(ISlackApiClient client) : RandomCartoonCommand,
 
     public async Task<SlashCommandResponse> Handle(SlashCommand command)
     {
-        await SendRandomCartoonImage(MasterOfAllScience, command, client);
+        await SendRandomCartoonImage(MasterOfAllScience, command, client, command.Text);
 
         return null;
     }

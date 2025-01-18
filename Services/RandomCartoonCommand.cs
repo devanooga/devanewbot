@@ -1,5 +1,6 @@
 namespace devanewbot.Services;
 
+using System;
 using System.Threading.Tasks;
 using Flurl;
 using Flurl.Http;
@@ -9,15 +10,38 @@ using SlackNet.WebApi;
 
 public abstract class RandomCartoonCommand
 {
+    private Random Random = new();
+
     public async Task SendRandomCartoonImage(
         Url BaseUrl,
         SlashCommand command,
-        ISlackApiClient client)
+        ISlackApiClient client,
+        string? search = null)
     {
-        var randomUrl = new Url(BaseUrl).AppendPathSegment("api/random");
-        var randomResponse = await randomUrl.GetJsonAsync<RandomResponse>();
+        CartoonImageResponse? response = null;
+        if (string.IsNullOrEmpty(search))
+        {
+            var randomUrl = new Url(BaseUrl).AppendPathSegment("api/random");
+            response = await randomUrl.GetJsonAsync<CartoonImageResponse>();
+        }
+        else
+        {
+            var searchUrl = new Url(BaseUrl).AppendPathSegment("api/search")
+                .SetQueryParam("q", search);
+            var searchResponse = await searchUrl.GetJsonAsync<FrameResponse[]>();
+            response = searchResponse.Length > 0 ? new CartoonImageResponse()
+            {
+                Frame = searchResponse[Random.Next(searchResponse.Length)]
+            } : null;
+        }
+
+        if (response is null)
+        {
+            return;
+        }
+
         var imageUrl = new Url(BaseUrl)
-            .AppendPathSegment($"img/{randomResponse.Frame.Episode}/{randomResponse.Frame.Timestamp}.jpg");
+            .AppendPathSegment($"img/{response.Frame.Episode}/{response.Frame.Timestamp}.jpg");
         var slackUser = await client.Users.Info(command.UserId);
 
         await client.Chat.PostMessage(new Message
@@ -32,7 +56,7 @@ public abstract class RandomCartoonCommand
         });
     }
 
-    private class RandomResponse
+    private class CartoonImageResponse
     {
         public FrameResponse Frame { get; set; } = null!;
     }
