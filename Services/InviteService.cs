@@ -179,7 +179,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
 
         if (request is not null)
         {
-            await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
+            await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), System.Threading.CancellationToken.None);
         }
         await SlackApiClient.Chat.PostMessage(new Message
         {

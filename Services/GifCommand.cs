@@ -150,6 +150,6 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
         }
 
 
-        await Client.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
+        await Client.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), System.Threading.CancellationToken.None);
     }
 }
