@@ -11,6 +11,8 @@ using SlackNet.WebApi;
 using System;
 using System.Text.Json.Serialization;
 using global::SlackDotNet;
+using System.ComponentModel;
+using System.Threading;
 
 public class InviteService : IBlockActionHandler<ButtonAction>
 {
@@ -179,7 +181,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
 
         if (request is not null)
         {
-            await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
+            await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), CancellationToken.None);
         }
         await SlackApiClient.Chat.PostMessage(new Message
         {

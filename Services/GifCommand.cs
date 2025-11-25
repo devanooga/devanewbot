@@ -1,6 +1,7 @@
 namespace devanewbot.Services;
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using devanewbot.Models;
 using Flurl;
@@ -150,6 +151,6 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
         }
 
 
-        await Client.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), null);
+        await Client.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), CancellationToken.None);
     }
 }
