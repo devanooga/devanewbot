@@ -41,11 +41,14 @@ public class ForumController : Controller
                 "General" => "C01EGSCSYQY", // General is a renamed channel? It's making the lookup fail, just map it.
                 _ => throw new Exception($"{model.Data.Forum.Title} not mapped to a Slack channel")
             };
-        var message = $"A new thread has been posted by {model.Data.Username}: {Link.Url(model.Data.ViewUrl, model.Data.Title)}";
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = channel,
-            Text = message,
+            Text = $"{Link.Url(model.Data.ViewUrl, model.Data.Title)}",
+            Username = $"Forums - {model.Data.Username}",
+            IconUrl = model.Data.User.AvatarUrls.H,
+            UnfurlLinks = true,
+            UnfurlMedia = true,
         });
         return Ok();
     }
