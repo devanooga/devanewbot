@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 
 WORKDIR /app
 EXPOSE 5010
@@ -14,15 +14,14 @@ RUN apt-get update && \
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 
-FROM node:18-bullseye-slim AS vuebuild
+FROM node:24 AS vuebuild
 WORKDIR /src
 COPY ["vue", "vue"]
 WORKDIR "/src/vue"
 RUN npm ci
-RUN export NODE_OPTIONS=--openssl-legacy-provider && \
-    npm run build 
+RUN npm run build 
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS publish
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS publish
 WORKDIR /src
 COPY . .
 WORKDIR "/src"
