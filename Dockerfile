@@ -3,14 +3,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 EXPOSE 5010
 
-
 ENV ASPNETCORE_URLS=http://+:5010
 
 RUN apt-get update && \
     apt-get install wget unzip curl jq \
     perl perl-base perl-modules libclone-perl libdate-manip-perl libdatetime-format-strptime-perl libdatetime-perl libjson-perl libmath-bigint-perl libmath-round-perl libswitch-perl libtext-csv-perl liburi-perl -y
-
-USER appuser
 
 FROM node:24 AS vuebuild
 WORKDIR /src
@@ -32,4 +29,5 @@ COPY --from=vuebuild /src/wwwroot wwwroot
 RUN wget https://github.com/molo1134/qrmbot/archive/refs/heads/master.zip && \
     unzip master.zip && \
     mv qrmbot-master qrmbot
+USER appuser
 ENTRYPOINT ["dotnet", "devanewbot.dll"]

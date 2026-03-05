@@ -13,7 +13,12 @@ interface TokenResponse {
 axios.get<TokenResponse>("/api/v0/signup").then((response) => {
     createApp(App)
         .use(router)
-        .use(VueAxios, { $http: axios })
-        .use(VueReCaptcha, { siteKey: response.data.token })
+        .use(VueAxios, axios)
+        .use(VueReCaptcha, { 
+            loaderOptions: {
+                autoHideBadge: true,
+            },
+            siteKey: response.data.token 
+        })
         .mount("#app");
 });
