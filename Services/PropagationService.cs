@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Flurl.Http;
 using ImageMagick;
 using SlackNet;
+using SlackNet.WebApi;
 
 public class PropagationService
 {
@@ -28,6 +29,8 @@ public class PropagationService
         image.Format = MagickFormat.Png64;
         await image.WriteAsync(memoryStream);
         memoryStream.Seek(0, SeekOrigin.Begin);
-        await Client.Files.Upload(memoryStream, "image/png", $"solar101vhf-{timeStamp}.png", channels: new[] { ChannelId });
+        var fileUpload = new FileUpload($"solar101vhf-{timeStamp}.png", memoryStream);
+        var uploadResult = await Client.Files.Upload(fileUpload);
+        await Client.Files.CompleteUploadExternal([uploadResult], ChannelId);
     }
 }
