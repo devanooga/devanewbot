@@ -22,7 +22,7 @@ public class PropagationService
     public async Task PostMessage()
     {
         var timeStamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-        var response = await "http://www.hamqsl.com/solar101vhf.php/solar101vhf.php?{timeStamp}".GetAsync();
+        var response = await $"http://www.hamqsl.com/solar101vhf.php/solar101vhf.php?{timeStamp}".GetAsync();
         // We convert the image to PNG because for some reason Slack scaling gets really funny with gifs (#21)
         using var image = new MagickImage(await response.GetStreamAsync());
         using var memoryStream = new MemoryStream();
@@ -30,7 +30,6 @@ public class PropagationService
         await image.WriteAsync(memoryStream);
         memoryStream.Seek(0, SeekOrigin.Begin);
         var fileUpload = new FileUpload($"solar101vhf-{timeStamp}.png", memoryStream);
-        var uploadResult = await Client.Files.Upload(fileUpload);
-        var fileReferences = await Client.Files.CompleteUploadExternal([uploadResult], ChannelId, "Here's the latest solar data!");
+        var uploadResult = await Client.Files.Upload(fileUpload, ChannelId);
     }
 }
