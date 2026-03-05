@@ -31,6 +31,6 @@ public class PropagationService
         memoryStream.Seek(0, SeekOrigin.Begin);
         var fileUpload = new FileUpload($"solar101vhf-{timeStamp}.png", memoryStream);
         var uploadResult = await Client.Files.Upload(fileUpload);
-        await Client.Files.CompleteUploadExternal([uploadResult], ChannelId);
+        var fileReferences = await Client.Files.CompleteUploadExternal([uploadResult], ChannelId, "Here's the latest solar data!");
     }
 }
