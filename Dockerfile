@@ -9,6 +9,9 @@ RUN apt-get update && \
     apt-get install wget unzip curl jq \
     perl perl-base perl-modules libclone-perl libdate-manip-perl libdatetime-format-strptime-perl libdatetime-perl libjson-perl libmath-bigint-perl libmath-round-perl libswitch-perl libtext-csv-perl liburi-perl -y
 
+RUN useradd -m -u 5678 appuser && chown -R appuser /app
+USER appuser
+
 FROM node:24 AS vuebuild
 WORKDIR /src
 COPY ["vue", "vue"]
