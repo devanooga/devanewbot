@@ -63,15 +63,17 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
     /// <param name="userId"></param>
     /// <param name="text"></param>
     /// <param name="gifUrl"></param>
+    /// <param name="threadTs">Optional thread timestamp for posting in threads</param>
     /// <returns></returns>
-    private async Task SendGif(string channelId, string displayName, Uri iconUrl, string userId, string text, string gifUrl)
+    private async Task SendGif(string channelId, string displayName, Uri iconUrl, string userId, string text, string gifUrl, string? threadTs = null)
     {
-        await Client.Chat.PostEphemeral(userId, new Message
+        var ephemeralMessage = new Message
         {
             Channel = channelId,
             Username = displayName,
             Text = "Can do! :cando:",
             IconUrl = iconUrl.ToString(),
+            ThreadTs = threadTs,
             Blocks = new Block[] {
                 new ImageBlock
                 {
@@ -106,10 +108,11 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
                     }
                 }
             }
-        });
+        };
+        await Client.Chat.PostEphemeral(userId, ephemeralMessage);
     }
 
-    public async Task<SlashCommandResponse> Handle(SlashCommand command)
+    public async Task<SlashCommandResponse?> Handle(SlashCommand command)
     {
         var slackUser = await Client.Users.Info(command.UserId);
         var url = await Response(command);
@@ -119,7 +122,8 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
             new Uri(slackUser.Profile.ImageOriginal),
             command.UserId,
             command.Text,
-            url);
+            url,
+            null);
         return null;
     }
 
@@ -127,6 +131,8 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
     {
         Logger.LogInformation("Action: {}", action.ActionId);
         var slackUser = await Client.Users.Info(request.User.Id);
+        var threadTs = request.Message?.ThreadTs;
+
         if (action.ActionId == "post")
         {
             await Client.Chat.PostMessage(new Message
@@ -137,6 +143,7 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
                 Text = action.Value,
                 UnfurlLinks = true,
                 IconUrl = slackUser.Profile.ImageOriginal,
+                ThreadTs = threadTs
             });
         }
         else if (action.ActionId == "random")
@@ -147,7 +154,8 @@ public class GifCommand : ISlashCommandHandler, IBlockActionHandler<SlackNet.Blo
                 new Uri(slackUser.Profile.ImageOriginal),
                 slackUser.Id,
                 action.Value,
-                url);
+                url,
+                threadTs);
         }
 
 

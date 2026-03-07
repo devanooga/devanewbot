@@ -22,7 +22,7 @@ public class HamAlertController : Controller
         await Client.Chat.PostMessage(new Message
         {
             Channel = userId,
-            Text = $"HamAlert: {model.CallSign} {model.Frequency} {model.Band} {model.Mode} {model.Time}"
+            Text = $"HamAlert: {model.CallSign} {model.Frequency} {model.Band} {model.Mode} {model.Time} reported by {model.Source}"
         });
 
         return Ok();

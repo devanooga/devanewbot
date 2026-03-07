@@ -8,4 +8,5 @@ public class AlertModel
     public string? Band { get; set; }
     public string? Mode { get; set; }
     public string? Time { get; set; }
+    public string? Source { get; set; }
 }
