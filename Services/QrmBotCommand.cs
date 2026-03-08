@@ -1,6 +1,10 @@
 namespace devanewbot.Services;
 
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -33,15 +37,29 @@ public class QrmBotCommand : ISlashCommandHandler
     {
         // Remove first slash
         var cmd = command.Command.Substring(1).Replace("/wx", "/aeris");
+        // Directory transversal should not be possible because the command must be
+        //  provided as an approved list from Slack, but just in case, let's be safe here
+        if (cmd.Contains(".."))
+        {
+            throw new ArgumentException("Invalid command");
+        }
+
         var perlStartInfo = new ProcessStartInfo(@"perl")
         {
-            // MAKE SURE WE ESCAPE DOUBLE QUOTES DON'T RUIN MY DAY I SWEAR
-            Arguments = $"{Directory}lib/{cmd} \"{command.Text.Replace("\"", "\\\"")}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = false
         };
+
+        // We to support quoted arguments with spaces in them, but also just normal space-separated arguments
+        var args = Regex.Matches(command.Text, @"[""].+?[""]|[^ ]+")
+            .Select(m => m.Value.Trim('"'));
+        perlStartInfo.ArgumentList.Add($"{Directory}lib/{cmd}");
+        foreach (var arg in args)
+        {
+            perlStartInfo.ArgumentList.Add(arg);
+        }
 
         var perl = new Process
         {
@@ -49,8 +67,10 @@ public class QrmBotCommand : ISlashCommandHandler
         };
 
         perl.Start();
+        var stdoutTask = perl.StandardOutput.ReadToEndAsync();
+        var stderrTask = perl.StandardError.ReadToEndAsync();
         await perl.WaitForExitAsync();
-        string output = await perl.StandardOutput.ReadToEndAsync() + await perl.StandardError.ReadToEndAsync();
+        string output = await stdoutTask + await stderrTask;
         await Client.Chat.PostMessage(new Message
         {
             Username = "QRMBot",
