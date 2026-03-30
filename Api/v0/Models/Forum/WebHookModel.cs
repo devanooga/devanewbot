@@ -307,6 +307,9 @@ public class PostWebHookModel
 
 public class PostData
 {
+    [JsonPropertyName("post_id")]
+    public int PostId { get; set; }
+
     [JsonPropertyName("thread_id")]
     public int ThreadId { get; set; }
 
@@ -315,6 +318,9 @@ public class PostData
 
     [JsonPropertyName("view_url")]
     public string ViewUrl { get; set; }
+
+    [JsonPropertyName("is_first_post")]
+    public bool IsFirstPost { get; set; }
 
     [JsonPropertyName("User")]
     public User User { get; set; }
@@ -327,6 +333,9 @@ public class ThreadInfo
 {
     [JsonPropertyName("thread_id")]
     public int ThreadId { get; set; }
+
+    [JsonPropertyName("first_post_id")]
+    public int FirstPostId { get; set; }
 
     [JsonPropertyName("title")]
     public string Title { get; set; }

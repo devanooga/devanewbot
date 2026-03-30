@@ -58,12 +58,24 @@ public class ForumController : Controller
             UnfurlLinks = true,
             UnfurlMedia = true,
         });
+
+        // Set cooldown so the accompanying post.insert webhook doesn't double-post
+        _cache.Set($"forum-reply-{model.Data.ThreadId}", true, ReplyCooldown);
+
         return Ok();
     }
 
     private async Task<IActionResult> HandlePostWebhook(JsonElement body)
     {
         var model = body.Deserialize<PostWebHookModel>();
+
+        // Skip the first post in a thread — that's already handled by the thread.insert webhook
+        if (model.Data.IsFirstPost
+            || model.Data.PostId == (model.Data.Thread?.FirstPostId ?? 0))
+        {
+            return Ok();
+        }
+
         var threadId = model.Data.Thread?.ThreadId ?? model.Data.ThreadId;
         var cacheKey = $"forum-reply-{threadId}";
 
