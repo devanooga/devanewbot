@@ -38,6 +38,7 @@ var configuration = builder.Configuration;
 var suffix = configuration.GetSection("SlackSocket").GetValue<string>("CommandSuffix");
 
 builder.Services
+    .AddMemoryCache()
     .AddDbContext<DevanewbotContext>(options =>
         options.UseNpgsql(configuration.GetConnectionString("DevanewbotContext")))
     .AddHttpClient()

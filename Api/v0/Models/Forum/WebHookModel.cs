@@ -289,3 +289,51 @@ public class ProfileBannerUrls
     [JsonPropertyName("m")]
     public string M { get; set; }
 }
+
+public class PostWebHookModel
+{
+    [JsonPropertyName("content_type")]
+    public string ContentType { get; set; }
+
+    [JsonPropertyName("event")]
+    public string Event { get; set; }
+
+    [JsonPropertyName("content_id")]
+    public int ContentId { get; set; }
+
+    [JsonPropertyName("data")]
+    public PostData Data { get; set; }
+}
+
+public class PostData
+{
+    [JsonPropertyName("thread_id")]
+    public int ThreadId { get; set; }
+
+    [JsonPropertyName("username")]
+    public string Username { get; set; }
+
+    [JsonPropertyName("view_url")]
+    public string ViewUrl { get; set; }
+
+    [JsonPropertyName("User")]
+    public User User { get; set; }
+
+    [JsonPropertyName("Thread")]
+    public ThreadInfo Thread { get; set; }
+}
+
+public class ThreadInfo
+{
+    [JsonPropertyName("thread_id")]
+    public int ThreadId { get; set; }
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+
+    [JsonPropertyName("view_url")]
+    public string ViewUrl { get; set; }
+
+    [JsonPropertyName("Forum")]
+    public Forum Forum { get; set; }
+}
