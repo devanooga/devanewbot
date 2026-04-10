@@ -9,14 +9,11 @@ using SlackNet.Events;
 public class MemberJoinedChannelHandler(
     IChannelBanService channelBanService,
     ISlackApiClient client,
-    IOptions<SlackOptions> slackOptions,
-    IWelcomeService welcomeService) : IEventHandler<MemberJoinedChannel>
+    IOptions<SlackOptions> slackOptions) : IEventHandler<MemberJoinedChannel>
 {
     async Task IEventHandler<MemberJoinedChannel>.Handle(MemberJoinedChannel slackEvent)
     {
         var channelId = slackEvent.Channel;
-        await welcomeService.WelcomeNewUser(channelId, slackEvent.User);
-
         var userId = slackEvent.User;
 
         var hasBan = await channelBanService.HasActiveBan(channelId, userId);
