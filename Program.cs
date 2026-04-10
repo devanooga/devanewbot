@@ -46,7 +46,6 @@ builder.Services
     .AddSingleton<Client>()
     .AddTransient<InviteService>()
     .AddTransient<IChannelBanService, ChannelBanService>()
-    .AddTransient<IWelcomeService, WelcomeService>()
     .AddSlackNet(c =>
     {
         c
