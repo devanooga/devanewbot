@@ -18,12 +18,24 @@
                     autofocus
                     placeholder="Enter Email"
                     v-model="email"
+                    :disabled="submitting"
                 />
-                <input class="submit" type="submit" value="Join" />
+                <input
+                    class="submit"
+                    type="submit"
+                    :value="submitting ? 'Joining…' : 'Join'"
+                    :disabled="submitting"
+                />
             </form>
             <div class="accept-message" v-else>
-                Thank you for signing up, please check your e-mail for an invite
-                link!
+                <template v-if="queued">
+                    Thanks for signing up! Your request is being reviewed and
+                    you'll receive an invite e-mail once approved.
+                </template>
+                <template v-else>
+                    Thank you for signing up, please check your e-mail for an
+                    invite link!
+                </template>
             </div>
         </div>
     </div>
@@ -45,8 +57,12 @@ const { executeRecaptcha, recaptchaLoaded } =
 const email = ref("");
 const errorMessage = ref<string | null>(null);
 const signupAccepted = ref(false);
+const queued = ref(false);
+const submitting = ref(false);
 await recaptchaLoaded();
 async function signup() {
+    if (submitting.value) return;
+    submitting.value = true;
     errorMessage.value = null;
     signupAccepted.value = false;
     await axios
@@ -54,7 +70,8 @@ async function signup() {
             email: email.value,
             token: await executeRecaptcha("signup"),
         })
-        .then(() => {
+        .then((response) => {
+            queued.value = response.data.status === "queued";
             signupAccepted.value = true;
         })
         .catch((error) => {
@@ -70,6 +87,9 @@ async function signup() {
                 default:
                     errorMessage.value = `Unexpected error code from Slack: ${error.response.data.error}, please report this error via our contact form and we'll send you an invite manually!`;
             }
+        })
+        .finally(() => {
+            submitting.value = false;
         });
 }
 </script>

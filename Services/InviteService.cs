@@ -36,7 +36,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         HttpClientFactory = httpClientFactory;
     }
 
-    public async Task CreateInvite(string email, string ip)
+    public async Task<InviteResult> CreateInvite(string email, string ip)
     {
         var locationInfo = await GetLocationInfo(ip);
         var (flag, message) = EvaluateLocation(locationInfo);
@@ -57,16 +57,18 @@ public class InviteService : IBlockActionHandler<ButtonAction>
             try
             {
                 await HandleInvite(approve: true, email, ip, locationInfo);
+                return InviteResult.Approved;
             }
             catch (Exception e)
             {
                 Logger.LogError(e, "Failed to automatically approve invite for {email} from {ip}", email, ip);
                 await PostInviteMessage(markdownText, payload);
+                return InviteResult.Queued;
             }
-            return;
         }
 
         await PostInviteMessage(markdownText, payload);
+        return InviteResult.Queued;
     }
 
     public async Task PostInviteMessage(string message, string payload)
@@ -288,4 +290,10 @@ public enum LocationFlag
     Green,
     Yellow,
     Red
+}
+
+public enum InviteResult
+{
+    Approved,
+    Queued
 }

@@ -44,7 +44,7 @@ public class SignupController : Controller
             return BadRequest(new { Error = "token_verification_failed" });
         }
 
-        await InviteService.CreateInvite(model.Email, Request.HttpContext.Connection.RemoteIpAddress.ToString());
-        return Ok();
+        var result = await InviteService.CreateInvite(model.Email, Request.HttpContext.Connection.RemoteIpAddress.ToString());
+        return Ok(new { Status = result == InviteResult.Approved ? "approved" : "queued" });
     }
 }
