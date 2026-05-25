@@ -45,6 +45,12 @@ public class SignupController : Controller
         }
 
         var result = await InviteService.CreateInvite(model.Email, Request.HttpContext.Connection.RemoteIpAddress.ToString());
-        return Ok(new { Status = result == InviteResult.Approved ? "approved" : "queued" });
+        var status = result switch
+        {
+            InviteResult.Approved => "approved",
+            InviteResult.AlreadyInvited => "already_invited",
+            _ => "queued",
+        };
+        return Ok(new { Status = status });
     }
 }

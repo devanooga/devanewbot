@@ -56,8 +56,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         {
             try
             {
-                await HandleInvite(approve: true, email, ip, locationInfo);
-                return InviteResult.Approved;
+                return await HandleInvite(approve: true, email, ip, locationInfo);
             }
             catch (Exception e)
             {
@@ -146,7 +145,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         }
     }
 
-    private async Task HandleInvite(
+    private async Task<InviteResult> HandleInvite(
         bool approve,
         string email,
         string ip,
@@ -155,24 +154,38 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         string approver = "Automatic")
     {
         string text;
+        var result = InviteResult.Approved;
         if (approve)
         {
             var (success, error) = await Slack.InviteUser(email);
             if (!success)
             {
-                await SlackApiClient.Chat.PostMessage(new Message
+                if (error == "already_in_team" || error == "already_in_team_invited_user")
                 {
-                    Channel = Channel,
-                    Parse = ParseMode.Full,
-                    Text = $"{approver} approved {email} from {ip} but we had an error: {error}",
-                    UnfurlLinks = true,
-                });
-                throw new Exception($"Failed to invite user: {error}");
+                    var location = locationInfo is null
+                        ? ip
+                        : $"{locationInfo.City}, {locationInfo.Region}, {locationInfo.Country}";
+                    text = $"Re-signup attempt for {email} from {location} (already invited, no action taken)";
+                    result = InviteResult.AlreadyInvited;
+                }
+                else
+                {
+                    await SlackApiClient.Chat.PostMessage(new Message
+                    {
+                        Channel = Channel,
+                        Parse = ParseMode.Full,
+                        Text = $"{approver} approved {email} from {ip} but we had an error: {error}",
+                        UnfurlLinks = true,
+                    });
+                    throw new Exception($"Failed to invite user: {error}");
+                }
             }
-
-            text = locationInfo is null
-                ? $"Invite approved for {email} from {ip} by {approver}"
-                : $"Invite approved for {email} from {locationInfo.City}, {locationInfo.Region}, {locationInfo.Country} by {approver}";
+            else
+            {
+                text = locationInfo is null
+                    ? $"Invite approved for {email} from {ip} by {approver}"
+                    : $"Invite approved for {email} from {locationInfo.City}, {locationInfo.Region}, {locationInfo.Country} by {approver}";
+            }
         }
         else
         {
@@ -191,6 +204,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
             Parse = ParseMode.Full,
             Text = text
         });
+        return result;
     }
 
     private static string FlagAsEmoji(LocationFlag flag) => flag switch
@@ -295,5 +309,6 @@ public enum LocationFlag
 public enum InviteResult
 {
     Approved,
-    Queued
+    Queued,
+    AlreadyInvited
 }
