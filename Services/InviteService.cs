@@ -11,7 +11,7 @@ using SlackNet.WebApi;
 using System;
 using System.Text.Json.Serialization;
 using global::SlackDotNet;
-using System.ComponentModel;
+using System.Collections.Generic;
 using System.Threading;
 
 public class InviteService : IBlockActionHandler<ButtonAction>
@@ -20,7 +20,8 @@ public class InviteService : IBlockActionHandler<ButtonAction>
     protected ISlackApiClient SlackApiClient { get; }
     protected ILogger<InviteService> Logger { get; }
     protected IHttpClientFactory HttpClientFactory { get; }
-    protected Uri GeoIpApi = new("http://ip-api.com/json/");
+    private const string GeoIpApi = "http://ip-api.com/json/";
+    private const string GeoIpFields = "status,message,country,regionName,city,lat,lon,timezone,isp,org,as,reverse,mobile,proxy,hosting";
 
     private const string Channel = "C074VF1PC7K";
 
@@ -48,9 +49,7 @@ public class InviteService : IBlockActionHandler<ButtonAction>
             LocationInfo = locationInfo
         });
 
-        var markdownText = locationInfo is null
-            ? $"Invite request for {email} from IP {ip}\nError: Failed to determine location"
-            : $"Invite request for {email} from IP {ip}\nLocation: {locationInfo.City}, {locationInfo.Region}, {locationInfo.Country}\n{FlagAsEmoji(flag)} {message}";
+        var markdownText = BuildRequestMessage(email, ip, locationInfo, flag, message);
 
         if (flag == LocationFlag.Green)
         {
@@ -207,6 +206,45 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         return result;
     }
 
+    private static string BuildRequestMessage(string email, string ip, LocationInfo? locationInfo, LocationFlag flag, string message)
+    {
+        var lines = new List<string> { $"Invite request for {email} from IP {ip}" };
+
+        if (locationInfo is null)
+        {
+            lines.Add("Error: Failed to determine location");
+        }
+        else
+        {
+            lines.Add($"Location: {locationInfo.City}, {locationInfo.Region}, {locationInfo.Country} ({locationInfo.Timezone})");
+            lines.Add($"ISP: {locationInfo.Isp} | ASN: {locationInfo.AutonomousSystem}");
+            if (!string.IsNullOrEmpty(locationInfo.Org) && locationInfo.Org != locationInfo.Isp)
+            {
+                lines.Add($"Org: {locationInfo.Org}");
+            }
+            if (!string.IsNullOrEmpty(locationInfo.Hostname))
+            {
+                lines.Add($"Hostname: {locationInfo.Hostname}");
+            }
+            var signals = new List<string>();
+            if (locationInfo.Proxy) signals.Add("VPN/Proxy/Tor");
+            if (locationInfo.Hosting) signals.Add("Datacenter");
+            if (locationInfo.Mobile) signals.Add("Mobile");
+            if (signals.Count > 0)
+            {
+                lines.Add($"Type: {string.Join(", ", signals)}");
+            }
+        }
+
+        lines.Add($"{FlagAsEmoji(flag)} {message}");
+        lines.Add(string.Join(" | ",
+            $"<https://whatismyipaddress.com/ip/{ip}|whatismyipaddress>",
+            $"<https://www.abuseipdb.com/check/{ip}|AbuseIPDB>",
+            $"<https://www.google.com/search?q={Uri.EscapeDataString($"\"{email}\"")}|Google email>"));
+
+        return string.Join("\n", lines);
+    }
+
     private static string FlagAsEmoji(LocationFlag flag) => flag switch
     {
         LocationFlag.Green => ":large_green_square:",
@@ -220,13 +258,20 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         try
         {
             using var client = HttpClientFactory.CreateClient();
-            var response = await client.GetAsync(new Uri(GeoIpApi, ip));
+            var response = await client.GetAsync($"{GeoIpApi}{ip}?fields={GeoIpFields}");
+            response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<LocationInfo>(content);
+            var locationInfo = JsonSerializer.Deserialize<LocationInfo>(content);
+            if (locationInfo?.Status != "success")
+            {
+                Logger.LogError("GeoIP lookup failed for IP {ip}: {message}", ip, locationInfo?.Message);
+                return null;
+            }
+            return locationInfo;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            Logger.LogError("Failed to get location info for IP {ip}", ip);
+            Logger.LogError(e, "Failed to get location info for IP {ip}", ip);
             return null;
         }
     }
@@ -241,6 +286,16 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         if (locationInfo.Country != "United States")
         {
             return (LocationFlag.Red, "Overseas");
+        }
+
+        if (locationInfo.Proxy)
+        {
+            return (LocationFlag.Yellow, "VPN/proxy detected. Please check email results");
+        }
+
+        if (locationInfo.Hosting)
+        {
+            return (LocationFlag.Yellow, "Datacenter IP. Please check email results");
         }
 
         if ((locationInfo.Region == "Tennessee" && locationInfo.City == "Chattanooga")
@@ -287,9 +342,13 @@ public class SignupPayload
 
 public class LocationInfo
 {
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = null!;
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
     [JsonPropertyName("city")]
     public string City { get; set; } = null!;
-    [JsonPropertyName("region")]
+    [JsonPropertyName("regionName")]
     public string Region { get; set; } = null!;
     [JsonPropertyName("country")]
     public string Country { get; set; } = null!;
@@ -297,6 +356,22 @@ public class LocationInfo
     public double Lat { get; set; }
     [JsonPropertyName("lon")]
     public double Lon { get; set; }
+    [JsonPropertyName("timezone")]
+    public string? Timezone { get; set; }
+    [JsonPropertyName("isp")]
+    public string? Isp { get; set; }
+    [JsonPropertyName("org")]
+    public string? Org { get; set; }
+    [JsonPropertyName("as")]
+    public string? AutonomousSystem { get; set; }
+    [JsonPropertyName("reverse")]
+    public string? Hostname { get; set; }
+    [JsonPropertyName("mobile")]
+    public bool Mobile { get; set; }
+    [JsonPropertyName("proxy")]
+    public bool Proxy { get; set; }
+    [JsonPropertyName("hosting")]
+    public bool Hosting { get; set; }
 }
 
 public enum LocationFlag
