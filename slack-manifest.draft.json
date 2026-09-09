@@ -1,0 +1,105 @@
+{
+    "display_information": {
+        "name": "devanewbot"
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "devanewbot",
+            "always_online": true
+        },
+        "slash_commands": [
+            {
+                "command": "/qrm",
+                "description": "Run a QRMBot tool",
+                "usage_hint": "help | dxcc W1AW",
+                "should_escape": false
+            },
+            {
+                "command": "/hamalert",
+                "description": "Manage the Devanooga HamAlert callsign list",
+                "usage_hint": "list | add W1AW | remove W1AW",
+                "should_escape": false
+            },
+            {
+                "command": "/channel-ban",
+                "description": "Ban a user from a channel (admins only)",
+                "should_escape": false
+            },
+            {
+                "command": "/remove-channel-ban",
+                "description": "Lift a channel ban (admins only)",
+                "should_escape": false
+            },
+            {
+                "command": "/jif",
+                "description": "Search for a gif and post it",
+                "usage_hint": "search terms",
+                "should_escape": false
+            },
+            {
+                "command": "/formalizer",
+                "description": "Rewrite a linked message formally",
+                "usage_hint": "link to a message",
+                "should_escape": false
+            },
+            {
+                "command": "/spongebob",
+                "description": "Mock text in alternating case",
+                "usage_hint": "text to mock",
+                "should_escape": false
+            },
+            {
+                "command": "/stallman",
+                "description": "Post a photo of RMS at work",
+                "should_escape": false
+            },
+            {
+                "command": "/simpsons",
+                "description": "Post a Simpsons frame, optionally matching a quote",
+                "usage_hint": "quote",
+                "should_escape": false
+            },
+            {
+                "command": "/futurama",
+                "description": "Post a Futurama frame, optionally matching a quote",
+                "usage_hint": "quote",
+                "should_escape": false
+            },
+            {
+                "command": "/rickandmorty",
+                "description": "Post a Rick and Morty frame, optionally matching a quote",
+                "usage_hint": "quote",
+                "should_escape": false
+            }
+        ]
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+                "channels:read",
+                "chat:write",
+                "chat:write.customize",
+                "commands",
+                "emoji:read",
+                "files:write",
+                "users:read"
+            ],
+            "user": [
+                "channels:write"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "bot_events": [
+                "member_joined_channel"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": true,
+        "token_rotation_enabled": false
+    }
+}

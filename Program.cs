@@ -45,6 +45,7 @@ builder.Services
     .AddSingleton<Slack>()
     .AddSingleton<Client>()
     .AddTransient<InviteService>()
+    .AddSingleton<HamAlertService>()
     .AddTransient<IChannelBanService, ChannelBanService>()
     .AddSlackNet(c =>
     {
@@ -68,17 +69,11 @@ builder.Services
             .RegisterSlashCommandHandler<FuturamaCommand>("/futurama" + suffix)
             .RegisterSlashCommandHandler<RickAndMortyCommand>("/rickandmorty" + suffix)
             .RegisterSlashCommandHandler<FormalizerCommand>("/formalizer" + suffix)
+            .RegisterSlashCommandHandler<HamAlertCommand>("/hamalert" + suffix)
+            .RegisterSlashCommandHandler<QrmBotCommand>("/qrm" + suffix)
             .RegisterViewSubmissionHandler<ChannelBanModalHandler>(ChannelBanModalHandler.ModalCallbackId)
             .RegisterViewSubmissionHandler<RemoveBanModalHandler>(RemoveBanModalHandler.ModalCallbackId)
             .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();
-
-        // "No!" says the man in Github, "you should port the code"
-        //  I choose the lazy solution, I choose... this.
-        Directory.EnumerateFiles("qrmbot/lib")
-            .Where(f => !f.EndsWith(".csv") && !f.EndsWith("pm"))
-            .Select(f => f.Split("/").Last().Replace(".pl", string.Empty))
-            .ToList()
-            .ForEach(f => c.RegisterSlashCommandHandler<QrmBotCommand>($"/{f}"));
     })
     .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
