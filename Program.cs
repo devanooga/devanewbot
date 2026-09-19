@@ -1,11 +1,15 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Linq;
 using AspNetCore.ReCaptcha;
 using devanewbot.Authorization;
-using devanewbot.Entities;
+using devanewbot.Data;
+using devanewbot.Data.Models;
 using devanewbot.HostedServices;
+using devanewbot.Seeders;
 using devanewbot.Services;
+using devanewbot.Services.Ham;
 using devanewbot.SlackDotNet.Options;
 using Devanewbot.Discord;
 using Hangfire;
@@ -13,6 +17,7 @@ using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +50,16 @@ builder.Services
     .AddSingleton<Slack>()
     .AddSingleton<Client>()
     .AddTransient<InviteService>()
-    .AddSingleton<HamAlertService>()
+    .AddSingleton<HamSpotQueue>()
+    .AddSingleton<HamWatchCache>()
+    .AddSingleton<HamFeedStatus>()
+    .AddSingleton<CountryFile>()
+    .AddSingleton<CallsignLocator>()
+    .AddSingleton<HamSessionMessenger>()
+    .AddScoped<HamWatchService>()
+    .AddScoped<HamSpotRetentionJob>()
+    .AddScoped<ISeeder, RoleSeeder>()
+    .AddScoped<ISeeder, AdminUserSeeder>()
     .AddTransient<IChannelBanService, ChannelBanService>()
     .AddSlackNet(c =>
     {
@@ -78,6 +92,7 @@ builder.Services
     .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
+    .Configure<HamAlertOptions>(o => configuration.GetSection("HamAlerts").Bind(o))
     .Configure<ForwardedHeadersOptions>(options =>
     {
         options.KnownNetworks.Clear();
@@ -89,14 +104,37 @@ builder.Services
     .AddRollbarWeb()
     .AddHangfire(config => config.UseRedisStorage(configuration.GetConnectionString("Redis")))
     .AddHangfireServer()
-    .AddAuthorization()
-    .AddAuthentication()
+    .AddIdentity<User, Role>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    })
+    .AddEntityFrameworkStores<DevanewbotContext>()
+    .AddDefaultTokenProviders()
     .Services
+    .ConfigureApplicationCookie(options =>
+    {
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
+    })
+    .AddAuthorization()
     .AddReCaptcha(configuration.GetSection("ReCaptcha"))
     .AddControllers()
     .Services
     .AddHostedService<SlackBotHostedService>()
-    .AddHostedService<HangfireHostedService>();
+    .AddHostedService<HangfireHostedService>()
+    .AddHostedService<PskReporterFeed>()
+    .AddHostedService<TelnetClusterFeed>()
+    .AddHostedService<HamSpotAggregator>();
 
 
 var app = builder.Build();
@@ -106,6 +144,11 @@ var app = builder.Build();
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<DevanewbotContext>();
     db.Database.Migrate();
+
+    foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
+    {
+        await seeder.Seed();
+    }
 }
 
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
@@ -134,9 +177,9 @@ app
         }
     })
     .UseRollbarExceptionHandler()
+    .UseRouting()
     .UseAuthentication()
     .UseAuthorization()
-    .UseRouting()
     .UseHangfireDashboard("/hangfire", new DashboardOptions
     {
         Authorization = new[] { new HangfireAuthorizationFilter() },

@@ -16,8 +16,8 @@
             },
             {
                 "command": "/hamalert",
-                "description": "Manage the Devanooga HamAlert callsign list",
-                "usage_hint": "list | add W1AW | remove W1AW",
+                "description": "Manage the Devanooga ham alert watch list",
+                "usage_hint": "list | add W1AW [EM75] | remove W1AW | grid W1AW EM75 | claim W1AW | status",
                 "should_escape": false
             },
             {

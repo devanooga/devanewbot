@@ -13,65 +13,95 @@ using System.Text.Json.Serialization;
 using global::SlackDotNet;
 using System.Collections.Generic;
 using System.Threading;
+using devanewbot.Data;
+using devanewbot.Data.Models;
+using Invite = devanewbot.Data.Models.Invite;
 
-public class InviteService : IBlockActionHandler<ButtonAction>
+public class InviteService(
+    Slack slack,
+    ISlackApiClient slackApiClient,
+    DevanewbotContext db,
+    ILogger<InviteService> logger,
+    IHttpClientFactory httpClientFactory) : IBlockActionHandler<ButtonAction>
 {
-    protected Slack Slack { get; }
-    protected ISlackApiClient SlackApiClient { get; }
-    protected ILogger<InviteService> Logger { get; }
-    protected IHttpClientFactory HttpClientFactory { get; }
+    protected Slack Slack { get; } = slack;
+    protected ISlackApiClient SlackApiClient { get; } = slackApiClient;
+    protected DevanewbotContext Db { get; } = db;
+    protected ILogger<InviteService> Logger { get; } = logger;
+    protected IHttpClientFactory HttpClientFactory { get; } = httpClientFactory;
     private const string GeoIpApi = "http://ip-api.com/json/";
     private const string GeoIpFields = "status,message,country,regionName,city,lat,lon,timezone,isp,org,as,reverse,mobile,proxy,hosting";
 
     private const string Channel = "C074VF1PC7K";
-
-    public InviteService(
-        Slack slack,
-        ISlackApiClient slackApiClient,
-        ILogger<InviteService> logger,
-        IHttpClientFactory httpClientFactory)
-    {
-        Slack = slack;
-        SlackApiClient = slackApiClient;
-        Logger = logger;
-        HttpClientFactory = httpClientFactory;
-    }
 
     public async Task<InviteResult> CreateInvite(string email, string ip)
     {
         var locationInfo = await GetLocationInfo(ip);
         var (flag, message) = EvaluateLocation(locationInfo);
 
-        var payload = JsonSerializer.Serialize(new SignupPayload
+        var invite = new Invite
         {
             Email = email,
             Ip = ip,
-            LocationInfo = locationInfo
-        });
-
-        var markdownText = BuildRequestMessage(email, ip, locationInfo, flag, message);
+            Source = InviteSource.Signup,
+            Status = InviteStatus.Pending,
+            Flag = flag.ToString(),
+            FlagMessage = message,
+            City = locationInfo?.City,
+            Region = locationInfo?.Region,
+            Country = locationInfo?.Country,
+            Isp = locationInfo?.Isp,
+            Proxy = locationInfo?.Proxy ?? false,
+            Hosting = locationInfo?.Hosting ?? false,
+            Mobile = locationInfo?.Mobile ?? false,
+            LocationJson = locationInfo is null ? null : JsonSerializer.Serialize(locationInfo)
+        };
+        Db.Invites.Add(invite);
+        await Db.SaveChangesAsync();
 
         if (flag == LocationFlag.Green)
         {
             try
             {
-                return await HandleInvite(approve: true, email, ip, locationInfo);
+                return await Decide(invite, approve: true, "Automatic", InviteDecisionSource.Automatic);
             }
             catch (Exception e)
             {
                 Logger.LogError(e, "Failed to automatically approve invite for {email} from {ip}", email, ip);
-                await PostInviteMessage(markdownText, payload);
-                return InviteResult.Queued;
+                invite.Status = InviteStatus.Pending;
             }
         }
 
-        await PostInviteMessage(markdownText, payload);
+        await PostInviteMessage(invite, BuildRequestMessage(email, ip, locationInfo, flag, message));
         return InviteResult.Queued;
     }
 
-    public async Task PostInviteMessage(string message, string payload)
+    public async Task<InviteResult> CreateAdminInvite(string email, string adminEmail)
     {
-        await SlackApiClient.Chat.PostMessage(new Message
+        var invite = new Invite
+        {
+            Email = email,
+            Ip = "admin panel",
+            Source = InviteSource.Admin,
+            Status = InviteStatus.Pending
+        };
+        Db.Invites.Add(invite);
+        await Db.SaveChangesAsync();
+
+        return await Decide(invite, approve: true, adminEmail, InviteDecisionSource.Admin);
+    }
+
+    public async Task<InviteResult> DecideFromAdmin(Guid inviteId, bool approve, string adminEmail)
+    {
+        var invite = await Db.Invites.FindAsync(inviteId)
+            ?? throw new InvalidOperationException("That invite does not exist.");
+
+        return await Decide(invite, approve, adminEmail, InviteDecisionSource.Admin);
+    }
+
+    private async Task PostInviteMessage(Invite invite, string message)
+    {
+        var response = await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = Channel,
             Blocks = new Block[]
@@ -88,30 +118,34 @@ public class InviteService : IBlockActionHandler<ButtonAction>
                         {
                             ActionId = "approve_invite",
                             Text = "Approve Invite",
-                            Value = payload,
+                            Value = invite.Id.ToString(),
                             Style = ButtonStyle.Primary
                         },
                         new SlackNet.Blocks.Button
                         {
                             ActionId = "decline_invite",
                             Text = "Decline Invite",
-                            Value = payload,
+                            Value = invite.Id.ToString(),
                             Style = ButtonStyle.Danger
                         }
                     }
                 }
             }
         });
+
+        invite.SlackChannelId = response.Channel;
+        invite.SlackMessageTs = response.Ts;
+        await Db.SaveChangesAsync();
     }
 
     public async Task Handle(ButtonAction action, BlockActionRequest request)
     {
         var commandingUser = await SlackApiClient.Users.Info(request.User.Id);
-        var signup = JsonSerializer.Deserialize<SignupPayload>(action.Value);
+        var invite = await FindInvite(action.Value);
 
-        if (signup is null)
+        if (invite is null)
         {
-            Logger.LogError("Failed to deserialize signup payload");
+            Logger.LogError("Failed to resolve invite from button payload");
             await SlackApiClient.Chat.PostMessage(new Message
             {
                 Channel = request.Channel.Id,
@@ -121,82 +155,142 @@ public class InviteService : IBlockActionHandler<ButtonAction>
             return;
         }
 
-        switch (action.ActionId)
+        try
         {
-            case "decline_invite":
-                await HandleInvite(
-                    approve: false,
-                    signup.Email,
-                    signup.Ip,
-                    signup.LocationInfo,
-                    request,
-                    commandingUser.Profile.DisplayName);
-                break;
-            case "approve_invite":
-                await HandleInvite(
-                    approve: true,
-                    signup.Email,
-                    signup.Ip,
-                    signup.LocationInfo,
-                    request,
-                    commandingUser.Profile.DisplayName);
-                break;
+            await Decide(
+                invite,
+                approve: action.ActionId == "approve_invite",
+                commandingUser.Profile.DisplayName,
+                InviteDecisionSource.Slack,
+                request,
+                request.User.Id);
+        }
+        catch (InvalidOperationException e)
+        {
+            await SlackApiClient.Chat.PostMessage(new Message
+            {
+                Channel = request.Channel.Id,
+                Text = e.Message
+            });
         }
     }
 
-    private async Task<InviteResult> HandleInvite(
-        bool approve,
-        string email,
-        string ip,
-        LocationInfo? locationInfo,
-        BlockActionRequest? request = null,
-        string approver = "Automatic")
+    private async Task<Invite?> FindInvite(string payload)
     {
+        if (Guid.TryParse(payload, out var id))
+        {
+            return await Db.Invites.FindAsync(id);
+        }
+
+        SignupPayload? legacy;
+        try
+        {
+            legacy = JsonSerializer.Deserialize<SignupPayload>(payload);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+
+        if (legacy is null)
+        {
+            return null;
+        }
+
+        var invite = new Invite
+        {
+            Email = legacy.Email,
+            Ip = legacy.Ip,
+            Source = InviteSource.Signup,
+            Status = InviteStatus.Pending,
+            City = legacy.LocationInfo?.City,
+            Region = legacy.LocationInfo?.Region,
+            Country = legacy.LocationInfo?.Country,
+            Isp = legacy.LocationInfo?.Isp,
+            Proxy = legacy.LocationInfo?.Proxy ?? false,
+            Hosting = legacy.LocationInfo?.Hosting ?? false,
+            Mobile = legacy.LocationInfo?.Mobile ?? false,
+            LocationJson = legacy.LocationInfo is null ? null : JsonSerializer.Serialize(legacy.LocationInfo)
+        };
+        Db.Invites.Add(invite);
+        await Db.SaveChangesAsync();
+        return invite;
+    }
+
+    private async Task<InviteResult> Decide(
+        Invite invite,
+        bool approve,
+        string decidedBy,
+        InviteDecisionSource source,
+        BlockActionRequest? request = null,
+        string? decidedBySlackUserId = null)
+    {
+        if (invite.Status != InviteStatus.Pending)
+        {
+            throw new InvalidOperationException($"{invite.Email} was already {Describe(invite.Status)} by {invite.DecidedBy} on {invite.DecidedAt:yyyy-MM-dd HH:mm} UTC.");
+        }
+
+        var location = invite.City is null ? invite.Ip : $"{invite.City}, {invite.Region}, {invite.Country}";
+        invite.DecidedAt = DateTime.UtcNow;
+        invite.DecidedBy = decidedBy;
+        invite.DecidedBySlackUserId = decidedBySlackUserId;
+        invite.DecisionSource = source;
+
         string text;
         var result = InviteResult.Approved;
         if (approve)
         {
-            var (success, error) = await Slack.InviteUser(email);
-            if (!success)
+            var (success, error) = await Slack.InviteUser(invite.Email);
+            if (success)
             {
-                if (error == "already_in_team" || error == "already_in_team_invited_user")
-                {
-                    var location = locationInfo is null
-                        ? ip
-                        : $"{locationInfo.City}, {locationInfo.Region}, {locationInfo.Country}";
-                    text = $"Re-signup attempt for {email} from {location} (already invited, no action taken)";
-                    result = InviteResult.AlreadyInvited;
-                }
-                else
-                {
-                    await SlackApiClient.Chat.PostMessage(new Message
-                    {
-                        Channel = Channel,
-                        Parse = ParseMode.Full,
-                        Text = $"{approver} approved {email} from {ip} but we had an error: {error}",
-                        UnfurlLinks = true,
-                    });
-                    throw new Exception($"Failed to invite user: {error}");
-                }
+                invite.Status = InviteStatus.Approved;
+                text = $"Invite approved for {invite.Email} from {location} by {decidedBy}";
+            }
+            else if (error == "already_in_team" || error == "already_in_team_invited_user")
+            {
+                invite.Status = InviteStatus.AlreadyInvited;
+                result = InviteResult.AlreadyInvited;
+                text = $"Re-signup attempt for {invite.Email} from {location} (already invited, no action taken)";
             }
             else
             {
-                text = locationInfo is null
-                    ? $"Invite approved for {email} from {ip} by {approver}"
-                    : $"Invite approved for {email} from {locationInfo.City}, {locationInfo.Region}, {locationInfo.Country} by {approver}";
+                invite.Status = InviteStatus.Failed;
+                invite.Error = error;
+                await Db.SaveChangesAsync();
+                await SlackApiClient.Chat.PostMessage(new Message
+                {
+                    Channel = Channel,
+                    Parse = ParseMode.Full,
+                    Text = $"{decidedBy} approved {invite.Email} from {invite.Ip} but we had an error: {error}",
+                    UnfurlLinks = true,
+                });
+                throw new Exception($"Failed to invite user: {error}");
             }
         }
         else
         {
-            text = locationInfo is null
-                ? $"Invite declined for {email} from {ip} by {approver}"
-                : $"Invite declined for {email} from {locationInfo.City}, {locationInfo.Region}, {locationInfo.Country} by {approver}";
+            invite.Status = InviteStatus.Declined;
+            text = $"Invite declined for {invite.Email} from {location} by {decidedBy}";
         }
+
+        await Db.SaveChangesAsync();
 
         if (request is not null)
         {
             await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), CancellationToken.None);
         }
+        else if (invite.SlackMessageTs is not null && invite.SlackChannelId is not null)
+        {
+            try
+            {
+                await SlackApiClient.Chat.Delete(invite.SlackMessageTs, invite.SlackChannelId);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning(e, "Could not delete the Slack request message for invite {InviteId}", invite.Id);
+            }
+        }
+
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = Channel,
@@ -205,6 +299,13 @@ public class InviteService : IBlockActionHandler<ButtonAction>
         });
         return result;
     }
+
+    private static string Describe(InviteStatus status) => status switch
+    {
+        InviteStatus.AlreadyInvited => "found to be already invited",
+        InviteStatus.Failed => "attempted and failed",
+        _ => status.ToString().ToLowerInvariant()
+    };
 
     private static string BuildRequestMessage(string email, string ip, LocationInfo? locationInfo, LocationFlag flag, string message)
     {

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using devanewbot.Data;
@@ -11,9 +12,11 @@ using devanewbot.Data;
 namespace devanewbot.Migrations
 {
     [DbContext(typeof(DevanewbotContext))]
-    partial class DevanewbotContextModelSnapshot : ModelSnapshot
+    [Migration("20260919030333_AddHamAlertsAndIdentity")]
+    partial class AddHamAlertsAndIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -352,93 +355,6 @@ namespace devanewbot.Migrations
                         .IsUnique();
 
                     b.ToTable("HamWatches");
-                });
-
-            modelBuilder.Entity("devanewbot.Data.Models.Invite", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("City")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Country")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DecidedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DecidedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DecidedBySlackUserId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DecisionSource")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Error")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Flag")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FlagMessage")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("Hosting")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Ip")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Isp")
-                        .HasColumnType("text");
-
-                    b.Property<string>("LocationJson")
-                        .HasColumnType("jsonb");
-
-                    b.Property<bool>("Mobile")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Proxy")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Region")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SlackChannelId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SlackMessageTs")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("Email");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("Invites");
                 });
 
             modelBuilder.Entity("devanewbot.Data.Models.Role", b =>

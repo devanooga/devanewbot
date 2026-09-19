@@ -3,6 +3,7 @@ namespace devanewbot.HostedServices;
 using System.Threading;
 using System.Threading.Tasks;
 using devanewbot.Services;
+using devanewbot.Services.Ham;
 using Hangfire;
 using Microsoft.Extensions.Hosting;
 
@@ -25,6 +26,18 @@ public class HangfireHostedService(IRecurringJobManager recurringJobManager) : I
             "Check Ban Expirations",
             cbs => cbs.CheckExpirations(),
             Cron.Hourly,
+            RecurringJobOptions);
+
+        recurringJobManager.AddOrUpdate<HamSpotRetentionJob>(
+            "Purge Ham Spots",
+            job => job.Purge(),
+            "0 4 * * *",
+            RecurringJobOptions);
+
+        recurringJobManager.AddOrUpdate<CountryFile>(
+            "Refresh cty.dat",
+            countries => countries.Refresh(CancellationToken.None),
+            Cron.Weekly(),
             RecurringJobOptions);
 
         return Task.CompletedTask;

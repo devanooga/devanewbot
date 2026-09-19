@@ -1,12 +1,13 @@
-namespace devanewbot.Authorization
-{
-    using Hangfire.Dashboard;
+namespace devanewbot.Authorization;
 
-    public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
+using devanewbot.Seeders;
+using Hangfire.Dashboard;
+
+public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context)
     {
-        public bool Authorize(DashboardContext context)
-        {
-            return true;
-        }
+        var user = context.GetHttpContext().User;
+        return user.Identity?.IsAuthenticated == true && user.IsInRole(RoleSeeder.Administrators);
     }
 }
