@@ -22,6 +22,7 @@ export interface Session {
     openedAt: string;
     lastHeardAt: string;
     closedAt: string | null;
+    suppressed: boolean;
     spotCount: number;
     reporterCount: number;
     furthestKm: number | null;

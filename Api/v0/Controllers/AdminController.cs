@@ -60,6 +60,7 @@ public partial class AdminController(
                     session.ClosedAt,
                     session.SpotCount,
                     session.ReporterCount,
+                    session.Suppressed,
                     session.FurthestKm,
                     session.FurthestReporter,
                     session.BestSnr,
@@ -148,6 +149,8 @@ public partial class AdminController(
         session.SlackChannelId = null;
         session.SlackMessageTs = null;
         session.RenderedAt = null;
+        session.Suppressed = false;
+        session.ForcedAnnounce = true;
         session.UpdatedAt = DateTime.UtcNow;
         await Db.SaveChangesAsync();
 

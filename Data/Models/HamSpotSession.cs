@@ -23,6 +23,8 @@ public class HamSpotSession : IEntityTypeConfiguration<HamSpotSession>, ICreatea
     public int ReporterCount { get; set; }
     public double? FurthestKm { get; set; }
     public string? FurthestReporter { get; set; }
+    public bool Suppressed { get; set; }
+    public bool ForcedAnnounce { get; set; }
     public int? BestSnr { get; set; }
     public string? BestSnrReporter { get; set; }
     public ICollection<HamSpot> Spots { get; set; } = [];

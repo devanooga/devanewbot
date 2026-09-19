@@ -30,13 +30,20 @@
                 <span class="ml-2 text-medium-emphasis">{{ item.mode }}</span>
             </template>
             <template #[`item.closedAt`]="{ item }">
-                <v-chip
-                    size="small"
-                    variant="tonal"
-                    :color="item.closedAt ? 'secondary' : 'success'"
-                >
+                <v-chip size="small" variant="tonal" :color="item.closedAt ? 'secondary' : 'success'">
                     {{ item.closedAt ? "closed" : "live" }}
                 </v-chip>
+                <v-tooltip
+                    v-if="item.suppressed"
+                    text="Held back: too few reporters against a concurrent session on another band"
+                    location="top"
+                >
+                    <template #activator="{ props }">
+                        <v-chip v-bind="props" size="small" variant="tonal" color="warning" class="ml-1">
+                            held back
+                        </v-chip>
+                    </template>
+                </v-tooltip>
             </template>
             <template #[`item.lastHeardAt`]="{ item }">{{ ago(item.lastHeardAt) }}</template>
             <template #[`item.furthestKm`]="{ item }">
@@ -53,7 +60,7 @@
             </template>
 
             <template #[`item.actions`]="{ item }">
-                <v-tooltip text="Post a fresh Slack message for this session" location="top">
+                <v-tooltip :text="item.suppressed ? 'Announce anyway, overriding the hold' : 'Post a fresh Slack message for this session'" location="top">
                     <template #activator="{ props }">
                         <v-btn
                             v-bind="props"

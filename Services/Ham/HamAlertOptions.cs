@@ -10,6 +10,9 @@ public class HamAlertOptions
     public double LocationChangeKm { get; set; } = 50;
     public int UpdateIntervalSeconds { get; set; } = 60;
     public int SpotRetentionDays { get; set; } = 30;
+    public int MinorityDominanceRatio { get; set; } = 10;
+    public int MinorityWindowMinutes { get; set; } = 15;
+    public int MinorityReporterCeiling { get; set; } = 3;
     public string PskReporterHost { get; set; } = "mqtt.pskreporter.info";
     public int PskReporterPort { get; set; } = 1883;
     public List<TelnetNode> TelnetNodes { get; set; } = [];

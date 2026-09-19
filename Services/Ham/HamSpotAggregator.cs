@@ -208,6 +208,32 @@ public class HamSpotAggregator(
         return Maidenhead.DistanceKm(session.Grid, spottedGrid) is { } moved && moved > options.Value.LocationChangeKm;
     }
 
+    /// A handful of misconfigured PSK Reporter receivers report the wrong band, which lands a watched
+    /// operator in a second session with a single spot while their real one has hundreds. A session is
+    /// held back only when a concurrent session for the same callsign dwarfs it by this much.
+    /// The ceiling matters as much as the ratio: bogus bands come from one or two stray receivers, so a
+    /// session with real breadth is never held back however busy the operator's main band is.
+    private static bool IsMinority(int reporters, int rivalReporters, int ratio, int ceiling) =>
+        ratio > 0
+        && rivalReporters > 0
+        && reporters <= ceiling
+        && reporters * ratio <= rivalReporters;
+
+    private async Task<int> RivalReporters(DevanewbotContext db, HamSpotSession session, CancellationToken cancellationToken)
+    {
+        var window = TimeSpan.FromMinutes(options.Value.MinorityWindowMinutes);
+        var from = session.LastHeardAt - window;
+        var to = session.LastHeardAt + window;
+
+        return await db.HamSpotSessions
+            .Where(rival => rival.Callsign == session.Callsign
+                && rival.Id != session.Id
+                && rival.LastHeardAt >= from
+                && rival.LastHeardAt <= to)
+            .Select(rival => (int?)rival.ReporterCount)
+            .MaxAsync(cancellationToken) ?? 0;
+    }
+
     private async Task Render(DevanewbotContext db, HamSpotSession session, string? slackUserId, CancellationToken cancellationToken)
     {
         var view = await BuildView(db, session, slackUserId, cancellationToken);
@@ -220,9 +246,28 @@ public class HamSpotAggregator(
         session.BestSnrReporter = view.Loudest?.Callsign;
         session.RenderedAt = DateTime.UtcNow;
 
+        // An announced session keeps its message; only a first announcement can be held back.
+        var announced = session.SlackMessageTs is not null && session.SlackChannelId is not null;
+        session.Suppressed = !announced
+            && !session.ForcedAnnounce
+            && IsMinority(
+                view.ReporterCount,
+                await RivalReporters(db, session, cancellationToken),
+                options.Value.MinorityDominanceRatio,
+                options.Value.MinorityReporterCeiling);
+
+        if (session.Suppressed)
+        {
+            logger.LogInformation(
+                "Holding back {Callsign} on {Band} {Mode}: {Reporters} reporter(s) against a concurrent session for the same callsign",
+                session.Callsign, session.Band, session.Mode, view.ReporterCount);
+            await db.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
         try
         {
-            if (session.SlackMessageTs is null || session.SlackChannelId is null)
+            if (!announced)
             {
                 (session.SlackChannelId, session.SlackMessageTs) = await messenger.Post(view);
             }
