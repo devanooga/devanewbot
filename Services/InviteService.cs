@@ -12,6 +12,7 @@ using System;
 using System.Text.Json.Serialization;
 using global::SlackDotNet;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using devanewbot.Data;
 using devanewbot.Data.Models;
@@ -160,7 +161,7 @@ public class InviteService(
             await Decide(
                 invite,
                 approve: action.ActionId == "approve_invite",
-                commandingUser.Profile.DisplayName,
+                DecidedByName(commandingUser),
                 InviteDecisionSource.Slack,
                 request,
                 request.User.Id);
@@ -174,6 +175,12 @@ public class InviteService(
             });
         }
     }
+
+    // Slack leaves the display name empty for anyone who never set one, and the invite log has nothing
+    // else to show for a decision made from Slack.
+    private static string DecidedByName(SlackNet.User user) =>
+        new[] { user.Profile?.DisplayName, user.Profile?.RealName, user.RealName, user.Name }
+            .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)) ?? user.Id;
 
     private async Task<Invite?> FindInvite(string payload)
     {

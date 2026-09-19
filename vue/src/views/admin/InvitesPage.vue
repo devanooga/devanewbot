@@ -54,14 +54,15 @@
                     <v-chip v-if="item.hosting" size="x-small" color="warning" variant="tonal" class="ml-1">
                         datacenter
                     </v-chip>
+                    <v-chip v-if="item.mobile" size="x-small" color="info" variant="tonal" class="ml-1">
+                        mobile
+                    </v-chip>
                 </div>
             </template>
             <template #[`item.flag`]="{ item }">
-                <v-tooltip v-if="item.flag" :text="item.flagMessage ?? ''" location="top">
-                    <template #activator="{ props }">
-                        <v-icon v-bind="props" :color="flagColor(item.flag)" icon="mdi-circle" size="14" />
-                    </template>
-                </v-tooltip>
+                <v-chip v-if="item.flag" size="small" variant="tonal" :color="flagColor(item.flag)">
+                    {{ item.flagMessage ?? item.flag }}
+                </v-chip>
             </template>
             <template #[`item.status`]="{ item }">
                 <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
