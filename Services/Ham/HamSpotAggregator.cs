@@ -70,14 +70,20 @@ public class HamSpotAggregator(
                 using var scope = scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<DevanewbotContext>();
                 var watched = await watches.Snapshot(stoppingToken);
-                var cutoff = DateTime.UtcNow - IdleTimeout;
+                var now = DateTime.UtcNow;
+                var cutoff = now - IdleTimeout;
+                var staleAfter = options.Value.StaleAfterMinutes;
 
-                // Closed sessions stay in scope so one that failed to announce still gets a message.
+                // Closed sessions stay in scope so one that failed to announce still gets a message, and a
+                // session that has just gone quiet needs one more render to say so.
                 var pending = await db.HamSpotSessions
                     .Where(session =>
                         (session.ClosedAt == null && session.LastHeardAt < cutoff)
                         || session.RenderedAt == null
-                        || session.UpdatedAt > session.RenderedAt)
+                        || session.UpdatedAt > session.RenderedAt
+                        || (session.ClosedAt == null
+                            && session.LastHeardAt.AddMinutes(staleAfter) <= now
+                            && session.RenderedAt < session.LastHeardAt.AddMinutes(staleAfter)))
                     .ToListAsync(stoppingToken);
 
                 foreach (var session in pending)
@@ -236,7 +242,7 @@ public class HamSpotAggregator(
 
     private async Task Render(DevanewbotContext db, HamSpotSession session, string? slackUserId, CancellationToken cancellationToken)
     {
-        var view = await BuildView(db, session, slackUserId, cancellationToken);
+        var view = await BuildView(db, session, slackUserId, options.Value.StaleAfterMinutes, cancellationToken);
 
         session.SpotCount = view.SpotCount;
         session.ReporterCount = view.ReporterCount;
@@ -284,7 +290,7 @@ public class HamSpotAggregator(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static async Task<HamSessionView> BuildView(DevanewbotContext db, HamSpotSession session, string? slackUserId, CancellationToken cancellationToken)
+    private static async Task<HamSessionView> BuildView(DevanewbotContext db, HamSpotSession session, string? slackUserId, int staleAfterMinutes, CancellationToken cancellationToken)
     {
         var spots = db.HamSpots.Where(spot => spot.SessionId == session.Id);
 
@@ -336,6 +342,7 @@ public class HamSpotAggregator(
             OpenedAt: session.CreatedAt,
             LastHeardAt: session.LastHeardAt,
             ClosedAt: session.ClosedAt,
+            State: HamSessionLifecycle.Of(session.LastHeardAt, session.ClosedAt, staleAfterMinutes),
             SpotCount: await spots.CountAsync(cancellationToken),
             ReporterCount: await spots.Select(spot => spot.Reporter).Distinct().CountAsync(cancellationToken),
             Furthest: furthest,

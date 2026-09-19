@@ -41,13 +41,19 @@ public class HamSessionMessenger(ISlackApiClient slack, IOptions<HamAlertOptions
     public static string Fallback(HamSessionView view)
     {
         var furthest = view.Furthest?.DistanceKm is { } km ? $", furthest {Km(km)} ({view.Furthest.Callsign})" : string.Empty;
-        return $"{view.Callsign} {(view.ClosedAt is null ? "is" : "was")} on the air on {BandMode(view)}: {view.SpotCount} spots{furthest}";
+        var verb = view.State == HamSessionState.Closed ? "was" : "is";
+        return $"{view.Callsign} {verb} on the air on {BandMode(view)}: {view.SpotCount} spots{furthest}";
     }
 
     public static IList<Block> Blocks(HamSessionView view)
     {
         var who = view.SlackUserId is null ? $"`{view.Callsign}`" : $"<@{view.SlackUserId}> (`{view.Callsign}`)";
-        var verb = view.ClosedAt is null ? "is on the air" : "was on the air";
+        var verb = view.State switch
+        {
+            HamSessionState.Closed => "was on the air",
+            HamSessionState.Quiet => "was last heard on the air",
+            _ => "is on the air"
+        };
         var where = view.Grid is null ? string.Empty : $" from *{view.Grid}*";
         var frequency = view.FrequencyHz is { } hz ? $" · {hz / 1_000_000.0:0.000} MHz" : string.Empty;
 
@@ -81,15 +87,24 @@ public class HamSessionMessenger(ISlackApiClient slack, IOptions<HamAlertOptions
         }
 
         var sources = view.Sources.Count > 0 ? $" · via {string.Join(", ", view.Sources)}" : string.Empty;
-        var state = view.ClosedAt is { } closed
-            ? $":white_circle: Wrapped up after {Duration(closed - view.OpenedAt)}{sources}"
-            : $":large_green_circle: Live · updated {SlackTime(DateTime.UtcNow)}{sources}";
+        // Slack marks its own edits and the fields above carry the timestamps, so this line only
+        // says what they cannot: whether the operator is still there.
+        var state = view.State switch
+        {
+            HamSessionState.Closed =>
+                $":white_circle: QRT after {Duration(view.ClosedAt!.Value - view.OpenedAt)} on the air{sources}",
+            HamSessionState.Quiet =>
+                $":large_yellow_circle: Nothing heard for {Duration(DateTime.UtcNow - view.LastHeardAt)}, likely QRT{sources}",
+            _ =>
+                $":large_green_circle: Live{sources}"
+        };
         blocks.Add(new ContextBlock { Elements = [new Markdown(state)] });
 
         return blocks;
     }
 
-    private static string Emoji(HamSessionView view) => view.ClosedAt is null ? ":satellite_antenna:" : ":radio:";
+    private static string Emoji(HamSessionView view) =>
+        view.State == HamSessionState.Closed ? ":radio:" : ":satellite_antenna:";
 
     private static string BandMode(HamSessionView view) => view.Mode == "?" ? view.Band : $"{view.Band} {view.Mode}";
 

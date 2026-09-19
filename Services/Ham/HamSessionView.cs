@@ -13,6 +13,7 @@ public record HamSessionView(
     DateTime OpenedAt,
     DateTime LastHeardAt,
     DateTime? ClosedAt,
+    HamSessionState State,
     int SpotCount,
     int ReporterCount,
     HamSessionView.Reporter? Furthest,

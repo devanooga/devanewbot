@@ -6,7 +6,8 @@ public class HamAlertOptions
 {
     public string? ChannelId { get; set; }
     public string Callsign { get; set; } = "W3DEV";
-    public int IdleTimeoutMinutes { get; set; } = 60;
+    public int StaleAfterMinutes { get; set; } = 10;
+    public int IdleTimeoutMinutes { get; set; } = 30;
     public double LocationChangeKm { get; set; } = 50;
     public int UpdateIntervalSeconds { get; set; } = 60;
     public int SpotRetentionDays { get; set; } = 30;

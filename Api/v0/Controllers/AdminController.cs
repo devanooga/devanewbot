@@ -203,6 +203,58 @@ public partial class AdminController(
         return removed.Length == 0 ? NotFound() : Ok(await Watches());
     }
 
+    private async Task<object> Sessions()
+    {
+        var staleAfter = hamAlertOptions.Value.StaleAfterMinutes;
+
+        var recent = await Db.HamSpotSessions
+            .OrderByDescending(session => session.LastHeardAt)
+            .Take(25)
+            .Select(session => new
+            {
+                session.Id,
+                session.Callsign,
+                session.Band,
+                session.Mode,
+                session.Grid,
+                OpenedAt = session.CreatedAt,
+                session.LastHeardAt,
+                session.ClosedAt,
+                session.Suppressed,
+                session.SpotCount,
+                session.ReporterCount,
+                session.FurthestKm,
+                session.FurthestReporter,
+                session.BestSnr,
+                session.BestSnrReporter
+            })
+            .ToListAsync();
+
+        return recent
+            .Select(session => new
+            {
+                session.Id,
+                session.Callsign,
+                session.Band,
+                session.Mode,
+                session.Grid,
+                session.OpenedAt,
+                session.LastHeardAt,
+                session.ClosedAt,
+                session.Suppressed,
+                session.SpotCount,
+                session.ReporterCount,
+                session.FurthestKm,
+                session.FurthestReporter,
+                session.BestSnr,
+                session.BestSnrReporter,
+                State = HamSessionLifecycle.Of(session.LastHeardAt, session.ClosedAt, staleAfter)
+                    .ToString()
+                    .ToLowerInvariant()
+            })
+            .ToList();
+    }
+
     private string[] Problems() =>
         hamAlertOptions.Value.ChannelConfigured
             ? []

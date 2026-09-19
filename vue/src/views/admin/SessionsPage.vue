@@ -30,9 +30,13 @@
                 <span class="ml-2 text-medium-emphasis">{{ item.mode }}</span>
             </template>
             <template #[`item.closedAt`]="{ item }">
-                <v-chip size="small" variant="tonal" :color="item.closedAt ? 'secondary' : 'success'">
-                    {{ item.closedAt ? "closed" : "live" }}
-                </v-chip>
+                <v-tooltip :text="stateHint(item)" location="top">
+                    <template #activator="{ props }">
+                        <v-chip v-bind="props" size="small" variant="tonal" :color="stateColor(item.state)">
+                            {{ item.state === "quiet" ? "likely QRT" : item.state }}
+                        </v-chip>
+                    </template>
+                </v-tooltip>
                 <v-tooltip
                     v-if="item.suppressed"
                     text="Held back: too few reporters against a concurrent session on another band"
@@ -133,6 +137,19 @@ const expanded = ref<string[]>([]);
 const detail = ref<SessionDetail | null>(null);
 const loadingDetail = ref(false);
 const announcing = ref<string | null>(null);
+
+function stateColor(state: string): string {
+    return state === "live" ? "success" : state === "quiet" ? "warning" : "secondary";
+}
+
+function stateHint(session: Session): string {
+    if (session.state === "live") {
+        return `Heard ${ago(session.lastHeardAt)}`;
+    }
+    return session.state === "quiet"
+        ? `Nothing heard since ${when(session.lastHeardAt)}`
+        : `Closed ${when(session.closedAt)}`;
+}
 
 const headers = [
     { title: "Callsign", key: "callsign" },

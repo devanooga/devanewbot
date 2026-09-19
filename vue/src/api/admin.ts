@@ -22,6 +22,7 @@ export interface Session {
     openedAt: string;
     lastHeardAt: string;
     closedAt: string | null;
+    state: string;
     suppressed: boolean;
     spotCount: number;
     reporterCount: number;
