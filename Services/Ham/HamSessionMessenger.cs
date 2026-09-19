@@ -14,6 +14,11 @@ public class HamSessionMessenger(ISlackApiClient slack, IOptions<HamAlertOptions
 {
     public async Task<(string ChannelId, string Ts)> Post(HamSessionView view)
     {
+        if (!options.Value.ChannelConfigured)
+        {
+            throw new InvalidOperationException("HamAlert:ChannelId is not set, so there is nowhere to announce this.");
+        }
+
         var response = await slack.Chat.PostMessage(new Message
         {
             Channel = options.Value.ChannelId,

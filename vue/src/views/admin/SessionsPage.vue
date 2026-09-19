@@ -52,6 +52,21 @@
                 </span>
             </template>
 
+            <template #[`item.actions`]="{ item }">
+                <v-tooltip text="Post a fresh Slack message for this session" location="top">
+                    <template #activator="{ props }">
+                        <v-btn
+                            v-bind="props"
+                            icon="mdi-bullhorn"
+                            size="small"
+                            variant="text"
+                            :loading="announcing === item.id"
+                            @click.stop="reannounce(item)"
+                        />
+                    </template>
+                </v-tooltip>
+            </template>
+
             <template #expanded-row="{ columns, item }">
                 <tr>
                     <td :colspan="columns.length" class="pa-4 bg-surface">
@@ -98,7 +113,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { api, SessionDetail } from "@/api/admin";
+import { api, errorMessage, Session, SessionDetail } from "@/api/admin";
 import { useAdminData } from "@/composables/useAdminData";
 import { useNotice } from "@/composables/useNotice";
 import { ago, kilometres, megahertz, when } from "@/composables/useFormat";
@@ -110,6 +125,7 @@ const search = ref("");
 const expanded = ref<string[]>([]);
 const detail = ref<SessionDetail | null>(null);
 const loadingDetail = ref(false);
+const announcing = ref<string | null>(null);
 
 const headers = [
     { title: "Callsign", key: "callsign" },
@@ -121,6 +137,7 @@ const headers = [
     { title: "Reporters", key: "reporterCount" },
     { title: "Furthest", key: "furthestKm" },
     { title: "Best signal", key: "bestSnr" },
+    { title: "", key: "actions", sortable: false, align: "end" as const },
 ];
 
 const spotHeaders = [
@@ -137,6 +154,18 @@ const spotHeaders = [
 ];
 
 const sessions = computed(() => status.value?.sessions ?? []);
+
+async function reannounce(session: Session) {
+    announcing.value = session.id;
+    try {
+        await api.reannounce(session.id);
+        notify(`${session.callsign} will be announced again within a minute.`);
+    } catch (failure) {
+        notify(errorMessage(failure, "Could not queue the announcement."), "error");
+    } finally {
+        announcing.value = null;
+    }
+}
 
 async function onExpand(value: unknown) {
     const ids = value as string[];

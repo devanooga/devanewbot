@@ -34,6 +34,11 @@ public class HamSpotAggregator(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!options.Value.ChannelConfigured)
+        {
+            logger.LogError("HamAlert:ChannelId is not set, so sessions will be tracked but never announced");
+        }
+
         await countries.Refresh(stoppingToken);
         await Task.WhenAll(Consume(stoppingToken), Maintain(stoppingToken));
     }
@@ -67,19 +72,29 @@ public class HamSpotAggregator(
                 var watched = await watches.Snapshot(stoppingToken);
                 var cutoff = DateTime.UtcNow - IdleTimeout;
 
-                var open = await db.HamSpotSessions
-                    .Where(session => session.ClosedAt == null)
-                    .Where(session => session.LastHeardAt < cutoff || session.RenderedAt == null || session.UpdatedAt > session.RenderedAt)
+                // Closed sessions stay in scope so one that failed to announce still gets a message.
+                var pending = await db.HamSpotSessions
+                    .Where(session =>
+                        (session.ClosedAt == null && session.LastHeardAt < cutoff)
+                        || session.RenderedAt == null
+                        || session.UpdatedAt > session.RenderedAt)
                     .ToListAsync(stoppingToken);
 
-                foreach (var session in open)
+                foreach (var session in pending)
                 {
-                    if (session.LastHeardAt < cutoff)
+                    if (session.ClosedAt == null && session.LastHeardAt < cutoff)
                     {
                         session.ClosedAt = DateTime.UtcNow;
                     }
 
-                    await Render(db, session, watched.GetValueOrDefault(session.Callsign)?.SlackUserId, stoppingToken);
+                    try
+                    {
+                        await Render(db, session, watched.GetValueOrDefault(session.Callsign)?.SlackUserId, stoppingToken);
+                    }
+                    catch (Exception exception) when (exception is not OperationCanceledException)
+                    {
+                        logger.LogError(exception, "Could not render {Callsign} on {Band} {Mode}", session.Callsign, session.Band, session.Mode);
+                    }
                 }
             }
             catch (Exception exception) when (exception is not OperationCanceledException)

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class HamAlertOptions
 {
-    public string ChannelId { get; set; } = null!;
+    public string? ChannelId { get; set; }
     public string Callsign { get; set; } = "W3DEV";
     public int IdleTimeoutMinutes { get; set; } = 60;
     public double LocationChangeKm { get; set; } = 50;
@@ -16,6 +16,8 @@ public class HamAlertOptions
     public PotaOptions Pota { get; set; } = new();
     public SotaOptions Sota { get; set; } = new();
     public HamQthOptions HamQth { get; set; } = new();
+
+    public bool ChannelConfigured => !string.IsNullOrWhiteSpace(ChannelId) && !ChannelId.StartsWith("#{");
 
     public class TelnetNode
     {

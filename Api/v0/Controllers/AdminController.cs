@@ -14,10 +14,16 @@ using Hangfire.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 [Route("/api/v0/admin")]
 [Authorize(Roles = RoleSeeder.Administrators)]
-public partial class AdminController(DevanewbotContext db, HamFeedStatus feeds, HamWatchService watchList, JobStorage jobStorage) : ControllerBase
+public partial class AdminController(
+    DevanewbotContext db,
+    HamFeedStatus feeds,
+    HamWatchService watchList,
+    IOptions<HamAlertOptions> hamAlertOptions,
+    JobStorage jobStorage) : ControllerBase
 {
     [GeneratedRegex("^[A-Z0-9]{3,12}$")]
     private static partial Regex CallsignPattern { get; }
@@ -36,6 +42,7 @@ public partial class AdminController(DevanewbotContext db, HamFeedStatus feeds, 
 
         return Ok(new
         {
+            Problems = Problems(),
             Feeds = Feeds.Snapshot(),
             Watches = await Watches(),
             Sessions = await Db.HamSpotSessions
@@ -129,6 +136,24 @@ public partial class AdminController(DevanewbotContext db, HamFeedStatus feeds, 
         return session is null ? NotFound() : Ok(session);
     }
 
+    [HttpPost("sessions/{id}/reannounce")]
+    public async Task<IActionResult> Reannounce([FromRoute] Guid id)
+    {
+        var session = await Db.HamSpotSessions.FindAsync(id);
+        if (session is null)
+        {
+            return NotFound();
+        }
+
+        session.SlackChannelId = null;
+        session.SlackMessageTs = null;
+        session.RenderedAt = null;
+        session.UpdatedAt = DateTime.UtcNow;
+        await Db.SaveChangesAsync();
+
+        return Ok();
+    }
+
     [HttpPost("watches")]
     public async Task<IActionResult> AddWatch([FromBody] WatchModel model)
     {
@@ -174,6 +199,11 @@ public partial class AdminController(DevanewbotContext db, HamFeedStatus feeds, 
         var removed = await WatchList.Remove([callsign]);
         return removed.Length == 0 ? NotFound() : Ok(await Watches());
     }
+
+    private string[] Problems() =>
+        hamAlertOptions.Value.ChannelConfigured
+            ? []
+            : ["HamAlert:ChannelId is not set, so sessions are tracked but never announced in Slack."];
 
     private async Task<object> Watches() =>
         await Db.HamWatches

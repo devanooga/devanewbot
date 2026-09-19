@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 // SOTA requires every API consumer to register a point of contact with their management team before
-// connecting, so this feed stays off until HamAlerts:Sota:Url is filled in with the endpoint they issue.
+// connecting, so this feed stays off until HamAlert:Sota:Url is filled in with the endpoint they issue.
 public class SotaFeed(
     HamSpotQueue queue,
     HamWatchCache watches,
@@ -47,7 +47,7 @@ public class SotaFeed(
     {
         if (!options.Value.Sota.Configured)
         {
-            logger.LogInformation("SOTA feed is off; set HamAlerts:Sota:Url and Enabled once SOTA has approved access");
+            logger.LogInformation("SOTA feed is off; set HamAlert:Sota:Url and Enabled once SOTA has approved access");
             return;
         }
 

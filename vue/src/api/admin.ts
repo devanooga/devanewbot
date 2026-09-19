@@ -107,6 +107,7 @@ export interface RecurringJob {
 }
 
 export interface Status {
+    problems: string[];
     feeds: Feed[];
     watches: Watch[];
     sessions: Session[];
@@ -142,6 +143,7 @@ export const api = {
 
     status: () => axios.get<Status>("/api/v0/admin/status").then((r) => r.data),
     session: (id: string) => axios.get<SessionDetail>(`/api/v0/admin/sessions/${id}`).then((r) => r.data),
+    reannounce: (id: string) => axios.post(`/api/v0/admin/sessions/${id}/reannounce`),
 
     addWatch: (watch: { callsign: string; grid: string; slackUserId: string }) =>
         axios.post<Watch[]>("/api/v0/admin/watches", watch).then((r) => r.data),

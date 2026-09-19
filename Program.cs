@@ -93,7 +93,7 @@ builder.Services
     .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
-    .Configure<HamAlertOptions>(o => configuration.GetSection("HamAlerts").Bind(o))
+    .Configure<HamAlertOptions>(o => configuration.GetSection("HamAlert").Bind(o))
     .Configure<ForwardedHeadersOptions>(options =>
     {
         options.KnownNetworks.Clear();

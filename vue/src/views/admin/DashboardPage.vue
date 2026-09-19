@@ -4,6 +4,16 @@
     </div>
 
     <div v-else>
+        <v-alert
+            v-for="problem in status.problems"
+            :key="problem"
+            type="warning"
+            variant="tonal"
+            class="mb-4"
+        >
+            {{ problem }}
+        </v-alert>
+
         <h2 class="text-subtitle-1 text-medium-emphasis mb-3">Feeds</h2>
         <v-row>
             <v-col v-for="feed in status.feeds" :key="feed.name" cols="12" sm="6" md="4" lg="3">
