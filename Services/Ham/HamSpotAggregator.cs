@@ -240,6 +240,33 @@ public class HamSpotAggregator(
             .MaxAsync(cancellationToken) ?? 0;
     }
 
+    /// PSK Reporter and the skimmer networks report continuously, so a session that only ever drew one or
+    /// two of them is a lone receiver hearing a stray decode rather than someone on the air. A POTA, SOTA
+    /// or cluster spot is a person deliberately spotting an operator, and one of those is worth announcing.
+    private bool BelowMinimumReporters(HamSessionView view) =>
+        view.ReporterCount < options.Value.MinimumReporters
+        && view.Sources.All(IsAutomated);
+
+    private bool IsAutomated(string source) =>
+        source == PskReporterFeed.Name
+        || options.Value.TelnetNodes.Any(node => node.Automated && node.Name == source);
+
+    private async Task<string?> HoldBack(DevanewbotContext db, HamSpotSession session, HamSessionView view, CancellationToken cancellationToken)
+    {
+        if (BelowMinimumReporters(view))
+        {
+            return $"{view.ReporterCount} automated reporter(s), under the {options.Value.MinimumReporters} needed to announce";
+        }
+
+        var rivals = await RivalReporters(db, session, cancellationToken);
+        if (IsMinority(view.ReporterCount, rivals, options.Value.MinorityDominanceRatio, options.Value.MinorityReporterCeiling))
+        {
+            return $"{view.ReporterCount} reporter(s) against a concurrent session for the same callsign";
+        }
+
+        return null;
+    }
+
     private async Task Render(DevanewbotContext db, HamSpotSession session, string? slackUserId, CancellationToken cancellationToken)
     {
         var view = await BuildView(db, session, slackUserId, options.Value.StaleAfterMinutes, cancellationToken);
@@ -254,19 +281,17 @@ public class HamSpotAggregator(
 
         // An announced session keeps its message; only a first announcement can be held back.
         var announced = session.SlackMessageTs is not null && session.SlackChannelId is not null;
-        session.Suppressed = !announced
-            && !session.ForcedAnnounce
-            && IsMinority(
-                view.ReporterCount,
-                await RivalReporters(db, session, cancellationToken),
-                options.Value.MinorityDominanceRatio,
-                options.Value.MinorityReporterCeiling);
+        var heldBack = announced || session.ForcedAnnounce
+            ? null
+            : await HoldBack(db, session, view, cancellationToken);
 
-        if (session.Suppressed)
+        session.Suppressed = heldBack is not null;
+
+        if (heldBack is not null)
         {
             logger.LogInformation(
-                "Holding back {Callsign} on {Band} {Mode}: {Reporters} reporter(s) against a concurrent session for the same callsign",
-                session.Callsign, session.Band, session.Mode, view.ReporterCount);
+                "Holding back {Callsign} on {Band} {Mode}: {Reason}",
+                session.Callsign, session.Band, session.Mode, heldBack);
             await db.SaveChangesAsync(cancellationToken);
             return;
         }
