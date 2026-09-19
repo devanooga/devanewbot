@@ -26,6 +26,7 @@ using Microsoft.Extensions.Logging;
 using RollbarDotNet.Configuration;
 using RollbarDotNet.Core;
 using RollbarDotNet.Logger;
+using RoushTech.Asio;
 using SlackDotNet;
 using SlackNet.AspNetCore;
 using SlackNet.Blocks;
@@ -103,6 +104,11 @@ builder.Services
         options.ForwardLimit = 3; // CDN + Load balancer
     })
     .AddRollbarWeb()
+    .AddAsioAppLog(options =>
+    {
+        options.RingCapacity = 2000;
+        options.ChannelCapacity = 64;
+    })
     .AddDataProtection()
     .PersistKeysToDbContext<DevanewbotContext>()
     .SetApplicationName("devanewbot")

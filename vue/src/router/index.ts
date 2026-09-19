@@ -43,6 +43,12 @@ const routes: Array<RouteRecordRaw> = [
                 meta: { title: "Invites" },
             },
             {
+                path: "logs",
+                name: "admin-logs",
+                component: () => import("../views/admin/LogsPage.vue"),
+                meta: { title: "Logs" },
+            },
+            {
                 path: "users",
                 name: "admin-users",
                 component: () => import("../views/admin/UsersPage.vue"),

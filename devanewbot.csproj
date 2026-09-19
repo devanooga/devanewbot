@@ -25,6 +25,7 @@
     <PackageReference Include="MQTTnet" Version="5.2.0.1603" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
     <PackageReference Include="RollbarDotNet" Version="0.8.0-beta-6061" />
+    <PackageReference Include="RoushTech.Asio" Version="0.4.0" />
     <PackageReference Include="SlackNet.AspNetCore" Version="0.17.9" />
     <PackageReference Include="WebSocketExtensions" Version="3.0.1" />
   </ItemGroup>

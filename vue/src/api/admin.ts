@@ -122,6 +122,24 @@ export interface Status {
     };
 }
 
+export interface LogEntry {
+    sequence: number;
+    timestampUtc: string;
+    level: string;
+    category: string;
+    message: string;
+    exception: string | null;
+}
+
+export interface LogPage {
+    entries: LogEntry[];
+    newest: number;
+    buffered: number;
+    missed: number;
+}
+
+export const LogLevels = ["Trace", "Debug", "Information", "Warning", "Error", "Critical"];
+
 export const InviteStatuses = ["Pending", "Approved", "Declined", "AlreadyInvited", "Failed"];
 
 export function errorMessage(failure: unknown, fallback: string): string {
@@ -162,6 +180,11 @@ export const api = {
         axios.post<{ result: string }>("/api/v0/admin/invites", { email }).then((r) => r.data),
     decideInvite: (id: string, approve: boolean) =>
         axios.post(`/api/v0/admin/invites/${id}/${approve ? "approve" : "decline"}`),
+
+    logs: (afterSequence: number, level: string, search: string) =>
+        axios
+            .get<LogPage>("/api/v0/admin/logs", { params: { afterSequence, level, search: search || undefined } })
+            .then((r) => r.data),
 
     users: () => axios.get<Account[]>("/api/v0/admin/users").then((r) => r.data),
     createUser: (email: string, password: string) =>
