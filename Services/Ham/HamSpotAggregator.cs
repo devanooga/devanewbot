@@ -240,14 +240,20 @@ public class HamSpotAggregator(
             .Select(spot => new HamSessionView.Reporter(spot.Reporter, spot.ReporterCountry, spot.DistanceKm, spot.Snr))
             .FirstOrDefaultAsync(cancellationToken);
 
-        var countries = await spots
+        var countryCounts = await spots
             .Where(spot => spot.ReporterCountry != null)
-            .GroupBy(spot => spot.ReporterCountry!)
-            .Select(group => new HamSessionView.CountryCount(group.Key, group.Select(spot => spot.Reporter).Distinct().Count()))
+            .Select(spot => new { Country = spot.ReporterCountry!, spot.Reporter })
+            .Distinct()
+            .GroupBy(pair => pair.Country)
+            .Select(group => new { Country = group.Key, Reporters = group.Count() })
             .OrderByDescending(country => country.Reporters)
             .ThenBy(country => country.Country)
             .Take(8)
             .ToListAsync(cancellationToken);
+
+        var countries = countryCounts
+            .Select(country => new HamSessionView.CountryCount(country.Country, country.Reporters))
+            .ToList();
 
         var latest = await spots
             .OrderByDescending(spot => spot.HeardAt)

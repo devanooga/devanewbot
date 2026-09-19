@@ -99,7 +99,10 @@ public class HamSessionMessenger(ISlackApiClient slack, IOptions<HamAlertOptions
         return $"{value} · `{reporter.Callsign}`{country}";
     }
 
-    private static string Km(double km) => $"{km.ToString("N0", CultureInfo.InvariantCulture)} km";
+    private const double MilesPerKilometre = 0.621371;
+
+    private static string Km(double km) =>
+        $"{km.ToString("N0", CultureInfo.InvariantCulture)} km / {(km * MilesPerKilometre).ToString("N0", CultureInfo.InvariantCulture)} mi";
 
     private static string SlackTime(DateTime utc)
     {

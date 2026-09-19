@@ -40,7 +40,7 @@
             </template>
             <template #[`item.lastHeardAt`]="{ item }">{{ ago(item.lastHeardAt) }}</template>
             <template #[`item.furthestKm`]="{ item }">
-                <span v-if="item.furthestKm">
+                <span v-if="item.furthestKm" class="text-no-wrap">
                     {{ kilometres(item.furthestKm) }}
                     <span class="text-medium-emphasis">{{ item.furthestReporter }}</span>
                 </span>
@@ -85,7 +85,7 @@
                                     <span v-if="spot.wpm != null">{{ spot.wpm }} wpm</span>
                                 </template>
                                 <template #[`item.distanceKm`]="{ item: spot }">
-                                    {{ kilometres(spot.distanceKm) }}
+                                    <span class="text-no-wrap">{{ kilometres(spot.distanceKm) }}</span>
                                 </template>
                             </v-data-table>
                         </div>

@@ -24,8 +24,15 @@ export function ago(value: string | null | undefined): string {
     return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+const MilesPerKilometre = 0.621371;
+
 export function kilometres(value: number | null | undefined): string {
-    return value == null ? "" : `${Math.round(value).toLocaleString()} km`;
+    if (value == null) {
+        return "";
+    }
+
+    const miles = Math.round(value * MilesPerKilometre).toLocaleString();
+    return `${Math.round(value).toLocaleString()} km / ${miles} mi`;
 }
 
 export function megahertz(hz: number): string {
