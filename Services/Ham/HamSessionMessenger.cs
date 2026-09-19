@@ -92,7 +92,7 @@ public class HamSessionMessenger(ISlackApiClient slack, IOptions<HamAlertOptions
         var state = view.State switch
         {
             HamSessionState.Closed =>
-                $":white_circle: QRT after {Duration(view.ClosedAt!.Value - view.OpenedAt)} on the air{sources}",
+                $":white_circle: QRT after {Duration(view.LastHeardAt - view.OpenedAt)} on the air{sources}",
             HamSessionState.Quiet =>
                 $":large_yellow_circle: Nothing heard for {Duration(DateTime.UtcNow - view.LastHeardAt)}, likely QRT{sources}",
             _ =>

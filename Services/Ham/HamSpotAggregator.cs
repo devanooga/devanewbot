@@ -75,15 +75,13 @@ public class HamSpotAggregator(
                 var staleAfter = options.Value.StaleAfterMinutes;
 
                 // Closed sessions stay in scope so one that failed to announce still gets a message, and a
-                // session that has just gone quiet needs one more render to say so.
+                // quiet session is re-rendered every tick so its silence counter keeps counting.
                 var pending = await db.HamSpotSessions
                     .Where(session =>
                         (session.ClosedAt == null && session.LastHeardAt < cutoff)
                         || session.RenderedAt == null
                         || session.UpdatedAt > session.RenderedAt
-                        || (session.ClosedAt == null
-                            && session.LastHeardAt.AddMinutes(staleAfter) <= now
-                            && session.RenderedAt < session.LastHeardAt.AddMinutes(staleAfter)))
+                        || (session.ClosedAt == null && session.LastHeardAt.AddMinutes(staleAfter) <= now))
                     .ToListAsync(stoppingToken);
 
                 foreach (var session in pending)
