@@ -45,28 +45,7 @@ public partial class AdminController(
             Problems = Problems(),
             Feeds = Feeds.Snapshot(),
             Watches = await Watches(),
-            Sessions = await Db.HamSpotSessions
-                .OrderByDescending(session => session.LastHeardAt)
-                .Take(25)
-                .Select(session => new
-                {
-                    session.Id,
-                    session.Callsign,
-                    session.Band,
-                    session.Mode,
-                    session.Grid,
-                    OpenedAt = session.CreatedAt,
-                    session.LastHeardAt,
-                    session.ClosedAt,
-                    session.SpotCount,
-                    session.ReporterCount,
-                    session.Suppressed,
-                    session.FurthestKm,
-                    session.FurthestReporter,
-                    session.BestSnr,
-                    session.BestSnrReporter
-                })
-                .ToListAsync(),
+            Sessions = await Sessions(),
             Spots = new
             {
                 Total = await Db.HamSpots.LongCountAsync(),
