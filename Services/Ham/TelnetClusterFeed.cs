@@ -69,6 +69,12 @@ public partial class TelnetClusterFeed(
 
         await WaitForLoginPrompt(reader, stoppingToken);
         await writer.WriteLineAsync(options.Value.Callsign);
+
+        foreach (var command in node.Commands)
+        {
+            await writer.WriteLineAsync(command);
+        }
+
         status.Connected(node.Name);
         logger.LogInformation("Connected to {Node} at {Host}:{Port} as {Callsign}", node.Name, node.Host, node.Port, options.Value.Callsign);
 

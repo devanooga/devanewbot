@@ -13,6 +13,8 @@ public class HamAlertOptions
     public string PskReporterHost { get; set; } = "mqtt.pskreporter.info";
     public int PskReporterPort { get; set; } = 1883;
     public List<TelnetNode> TelnetNodes { get; set; } = [];
+    public PotaOptions Pota { get; set; } = new();
+    public SotaOptions Sota { get; set; } = new();
     public HamQthOptions HamQth { get; set; } = new();
 
     public class TelnetNode
@@ -20,6 +22,22 @@ public class HamAlertOptions
         public string Name { get; set; } = null!;
         public string Host { get; set; } = null!;
         public int Port { get; set; }
+        public List<string> Commands { get; set; } = [];
+    }
+
+    public class PotaOptions
+    {
+        public bool Enabled { get; set; } = true;
+        public int PollSeconds { get; set; } = 60;
+    }
+
+    public class SotaOptions
+    {
+        public bool Enabled { get; set; }
+        public string? Url { get; set; }
+        public int PollSeconds { get; set; } = 120;
+
+        public bool Configured => Enabled && !string.IsNullOrWhiteSpace(Url) && !Url.StartsWith("#{");
     }
 
     public class HamQthOptions

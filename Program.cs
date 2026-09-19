@@ -134,6 +134,8 @@ builder.Services
     .AddHostedService<HangfireHostedService>()
     .AddHostedService<PskReporterFeed>()
     .AddHostedService<TelnetClusterFeed>()
+    .AddHostedService<PotaFeed>()
+    .AddHostedService<SotaFeed>()
     .AddHostedService<HamSpotAggregator>();
 
 
