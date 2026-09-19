@@ -6,11 +6,13 @@ const routes: Array<RouteRecordRaw> = [
         path: "/",
         name: "home",
         component: () => import("../views/home/index.vue"),
+        meta: { title: "Join the community" },
     },
     {
         path: "/admin/login",
         name: "admin-login",
         component: () => import("../views/admin/LoginPage.vue"),
+        meta: { title: "Sign in" },
     },
     {
         path: "/admin",
@@ -80,6 +82,15 @@ router.beforeEach(async (to) => {
     }
 
     return { path: "/admin/login", query: { next: to.fullPath } };
+});
+
+const SiteName = "Devanooga";
+const AdminName = "devanewbot admin";
+
+router.afterEach((to) => {
+    const page = to.meta.title as string | undefined;
+    const suffix = to.path.startsWith("/admin") ? AdminName : SiteName;
+    document.title = page ? `${page} · ${suffix}` : suffix;
 });
 
 export default router;

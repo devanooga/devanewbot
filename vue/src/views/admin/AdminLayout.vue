@@ -1,13 +1,10 @@
 <template>
     <v-app>
         <v-navigation-drawer v-model="drawer" color="surface">
-            <v-list-item class="py-4">
-                <template #prepend>
-                    <v-icon icon="mdi-antenna" color="primary" size="28" />
-                </template>
-                <v-list-item-title class="text-h6">devanewbot</v-list-item-title>
-                <v-list-item-subtitle>{{ callsignLabel }}</v-list-item-subtitle>
-            </v-list-item>
+            <div class="px-4 py-4">
+                <img src="/img/devanooga-logo.svg" alt="Devanooga" class="wordmark" />
+                <div class="text-caption text-medium-emphasis mt-2">devanewbot · {{ callsignLabel }}</div>
+            </div>
 
             <v-divider />
 
@@ -163,3 +160,11 @@ onMounted(async () => {
     startAutoRefresh();
 });
 </script>
+
+<style scoped>
+.wordmark {
+    display: block;
+    width: 150px;
+    max-width: 100%;
+}
+</style>

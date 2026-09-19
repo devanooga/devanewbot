@@ -6,13 +6,8 @@
                     <v-col cols="12" sm="8" md="5" lg="4">
                         <v-card class="pa-2" elevation="8">
                             <v-card-item>
-                                <div class="d-flex align-center ga-3 mb-2">
-                                    <v-icon icon="mdi-antenna" color="primary" size="32" />
-                                    <div>
-                                        <div class="text-h6">devanewbot</div>
-                                        <div class="text-caption text-medium-emphasis">Admin sign in</div>
-                                    </div>
-                                </div>
+                                <img src="/img/devanooga-logo.svg" alt="Devanooga" class="wordmark mb-3" />
+                                <div class="text-caption text-medium-emphasis">devanewbot admin sign in</div>
                             </v-card-item>
 
                             <v-card-text>
@@ -101,7 +96,12 @@ async function submit() {
 </script>
 
 <style scoped>
+.wordmark {
+    display: block;
+    width: 160px;
+}
+
 .login-background {
-    background: radial-gradient(circle at 20% 20%, rgba(79, 140, 255, 0.18), transparent 55%);
+    background: radial-gradient(circle at 20% 20%, rgba(224, 100, 79, 0.2), transparent 55%);
 }
 </style>
