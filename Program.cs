@@ -15,6 +15,7 @@ using Devanewbot.Discord;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -102,6 +103,10 @@ builder.Services
         options.ForwardLimit = 3; // CDN + Load balancer
     })
     .AddRollbarWeb()
+    .AddDataProtection()
+    .PersistKeysToDbContext<DevanewbotContext>()
+    .SetApplicationName("devanewbot")
+    .Services
     .AddHangfire(config => config.UseRedisStorage(configuration.GetConnectionString("Redis")))
     .AddHangfireServer()
     .AddIdentity<User, Role>(options =>

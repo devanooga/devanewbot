@@ -5,11 +5,13 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using devanewbot.Data.Models;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-public class DevanewbotContext(DbContextOptions<DevanewbotContext> options) : IdentityDbContext<User, Role, Guid>(options)
+public class DevanewbotContext(DbContextOptions<DevanewbotContext> options)
+    : IdentityDbContext<User, Role, Guid>(options), IDataProtectionKeyContext
 {
     public DbSet<ChannelBan> ChannelBans => Set<ChannelBan>();
     public DbSet<Invite> Invites => Set<Invite>();
@@ -17,6 +19,7 @@ public class DevanewbotContext(DbContextOptions<DevanewbotContext> options) : Id
     public DbSet<HamSpot> HamSpots => Set<HamSpot>();
     public DbSet<HamSpotSession> HamSpotSessions => Set<HamSpotSession>();
     public DbSet<HamCallsignLocation> HamCallsignLocations => Set<HamCallsignLocation>();
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
