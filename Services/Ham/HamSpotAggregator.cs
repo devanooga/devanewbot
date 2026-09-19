@@ -81,7 +81,7 @@ public class HamSpotAggregator(
                         (session.ClosedAt == null && session.LastHeardAt < cutoff)
                         || session.RenderedAt == null
                         || session.UpdatedAt > session.RenderedAt
-                        || (session.ClosedAt == null && session.LastHeardAt.AddMinutes(staleAfter) <= now))
+                        || (session.ClosedAt == null && !session.Suppressed && session.LastHeardAt.AddMinutes(staleAfter) <= now))
                     .ToListAsync(stoppingToken);
 
                 foreach (var session in pending)
@@ -226,14 +226,16 @@ public class HamSpotAggregator(
     private async Task<int> RivalReporters(DevanewbotContext db, HamSpotSession session, CancellationToken cancellationToken)
     {
         var window = TimeSpan.FromMinutes(options.Value.MinorityWindowMinutes);
-        var from = session.LastHeardAt - window;
+        var from = session.CreatedAt - window;
         var to = session.LastHeardAt + window;
 
+        // Overlapping spans, not nearby last-heard times: a rival that keeps running slides its last-heard
+        // past any window anchored on ours, which would release the session it is meant to hold back.
         return await db.HamSpotSessions
             .Where(rival => rival.Callsign == session.Callsign
                 && rival.Id != session.Id
                 && rival.LastHeardAt >= from
-                && rival.LastHeardAt <= to)
+                && rival.CreatedAt <= to)
             .Select(rival => (int?)rival.ReporterCount)
             .MaxAsync(cancellationToken) ?? 0;
     }
