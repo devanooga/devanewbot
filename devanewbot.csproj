@@ -15,13 +15,17 @@
     <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.12.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="Magick.NET-Q16-HDRI-AnyCPU" Version="14.10.3" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="MQTTnet" Version="5.2.0.1603" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
     <PackageReference Include="RollbarDotNet" Version="0.8.0-beta-6061" />
+    <PackageReference Include="RoushTech.Asio" Version="0.4.0" />
     <PackageReference Include="SlackNet.AspNetCore" Version="0.17.9" />
     <PackageReference Include="WebSocketExtensions" Version="3.0.1" />
   </ItemGroup>

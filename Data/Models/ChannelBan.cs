@@ -1,4 +1,4 @@
-namespace devanewbot.Entities;
+namespace devanewbot.Data.Models;
 
 using System;
 
