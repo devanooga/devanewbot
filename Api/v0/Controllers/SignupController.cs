@@ -49,6 +49,7 @@ public class SignupController : Controller
         {
             InviteResult.Approved => "approved",
             InviteResult.AlreadyInvited => "already_invited",
+            InviteResult.AlreadyPending => "already_pending",
             _ => "queued",
         };
         return Ok(new { Status = status });

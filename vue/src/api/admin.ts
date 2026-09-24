@@ -91,6 +91,12 @@ export interface Invite {
     error: string | null;
 }
 
+export interface InviteDetail extends Invite {
+    locationJson: string | null;
+    slackChannelId: string | null;
+    slackMessageTs: string | null;
+}
+
 export interface Account {
     id: string;
     email: string;
@@ -178,6 +184,7 @@ export const api = {
                 params: { status: status || undefined, search: search || undefined },
             })
             .then((r) => r.data),
+    invite: (id: string) => axios.get<InviteDetail>(`/api/v0/admin/invites/${id}`).then((r) => r.data),
     createInvite: (email: string) =>
         axios.post<{ result: string }>("/api/v0/admin/invites", { email }).then((r) => r.data),
     decideInvite: (id: string, approve: boolean) =>

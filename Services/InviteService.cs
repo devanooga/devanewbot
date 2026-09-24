@@ -16,6 +16,8 @@ using System.Linq;
 using System.Threading;
 using devanewbot.Data;
 using devanewbot.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Invite = devanewbot.Data.Models.Invite;
 
 public class InviteService(
@@ -23,13 +25,15 @@ public class InviteService(
     ISlackApiClient slackApiClient,
     DevanewbotContext db,
     ILogger<InviteService> logger,
-    IHttpClientFactory httpClientFactory) : IBlockActionHandler<ButtonAction>
+    IHttpClientFactory httpClientFactory,
+    IOptions<SiteOptions> siteOptions) : IBlockActionHandler<ButtonAction>
 {
     protected Slack Slack { get; } = slack;
     protected ISlackApiClient SlackApiClient { get; } = slackApiClient;
     protected DevanewbotContext Db { get; } = db;
     protected ILogger<InviteService> Logger { get; } = logger;
     protected IHttpClientFactory HttpClientFactory { get; } = httpClientFactory;
+    protected SiteOptions Site { get; } = siteOptions.Value;
     private const string GeoIpApi = "http://ip-api.com/json/";
     private const string GeoIpFields = "status,message,country,regionName,city,lat,lon,timezone,isp,org,as,reverse,mobile,proxy,hosting";
 
@@ -37,6 +41,15 @@ public class InviteService(
 
     public async Task<InviteResult> CreateInvite(string email, string ip)
     {
+        email = email.Trim();
+        var normalized = email.ToLowerInvariant();
+        if (await Db.Invites.AnyAsync(invite =>
+                invite.Status == InviteStatus.Pending && invite.Email.ToLower() == normalized))
+        {
+            Logger.LogInformation("Ignoring repeat signup for {email} from {ip}, an invite is already pending", email, ip);
+            return InviteResult.AlreadyPending;
+        }
+
         var locationInfo = await GetLocationInfo(ip);
         var (flag, message) = EvaluateLocation(locationInfo);
 
@@ -79,6 +92,15 @@ public class InviteService(
 
     public async Task<InviteResult> CreateAdminInvite(string email, string adminEmail)
     {
+        email = email.Trim();
+        var normalized = email.ToLowerInvariant();
+        var pending = await Db.Invites.FirstOrDefaultAsync(invite =>
+            invite.Status == InviteStatus.Pending && invite.Email.ToLower() == normalized);
+        if (pending is not null)
+        {
+            return await Decide(pending, approve: true, adminEmail, InviteDecisionSource.Admin);
+        }
+
         var invite = new Invite
         {
             Email = email,
@@ -282,20 +304,11 @@ public class InviteService(
 
         await Db.SaveChangesAsync();
 
-        if (request is not null)
+        await RemoveRequestMessage(invite, request);
+
+        if (Site.InviteUrl(invite.Id) is { } detailsUrl)
         {
-            await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), CancellationToken.None);
-        }
-        else if (invite.SlackMessageTs is not null && invite.SlackChannelId is not null)
-        {
-            try
-            {
-                await SlackApiClient.Chat.Delete(invite.SlackMessageTs, invite.SlackChannelId);
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning(e, "Could not delete the Slack request message for invite {InviteId}", invite.Id);
-            }
+            text += $" (<{detailsUrl}|details>)";
         }
 
         await SlackApiClient.Chat.PostMessage(new Message
@@ -305,6 +318,29 @@ public class InviteService(
             Text = text
         });
         return result;
+    }
+
+    // The response_url only lives 30 minutes and these requests routinely sit longer than that, so the
+    // stored timestamp is the only delete that survives a slow decision.
+    private async Task RemoveRequestMessage(Invite invite, BlockActionRequest? request)
+    {
+        if (invite.SlackMessageTs is not null && invite.SlackChannelId is not null)
+        {
+            try
+            {
+                await SlackApiClient.Chat.Delete(invite.SlackMessageTs, invite.SlackChannelId);
+                return;
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning(e, "Could not delete the Slack request message for invite {InviteId}", invite.Id);
+            }
+        }
+
+        if (request is not null)
+        {
+            await SlackApiClient.Respond(request.ResponseUrl, new SlackNet.Interaction.MessageUpdateResponse(new MessageResponse { DeleteOriginal = true }), CancellationToken.None);
+        }
     }
 
     private static string Describe(InviteStatus status) => status switch
@@ -493,5 +529,6 @@ public enum InviteResult
 {
     Approved,
     Queued,
-    AlreadyInvited
+    AlreadyInvited,
+    AlreadyPending
 }

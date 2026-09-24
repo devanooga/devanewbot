@@ -32,6 +32,11 @@
                     You've already been invited! Check your inbox (and spam
                     folder), or contact us if you didn't receive the email.
                 </template>
+                <template v-else-if="alreadyPending">
+                    You already have a request pending review. We'll e-mail
+                    your invite once it's approved, reach out via our contact
+                    form if you have questions.
+                </template>
                 <template v-else-if="queued">
                     Thanks for signing up! Your request is being reviewed and
                     you'll receive an invite e-mail once approved.
@@ -63,6 +68,7 @@ const errorMessage = ref<string | null>(null);
 const signupAccepted = ref(false);
 const queued = ref(false);
 const alreadyInvited = ref(false);
+const alreadyPending = ref(false);
 const submitting = ref(false);
 await recaptchaLoaded();
 async function signup() {
@@ -78,6 +84,7 @@ async function signup() {
         .then((response) => {
             queued.value = response.data.status === "queued";
             alreadyInvited.value = response.data.status === "already_invited";
+            alreadyPending.value = response.data.status === "already_pending";
             signupAccepted.value = true;
         })
         .catch((error) => {

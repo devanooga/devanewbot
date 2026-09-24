@@ -95,6 +95,7 @@ builder.Services
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
     .Configure<HamAlertOptions>(o => configuration.GetSection("HamAlert").Bind(o))
+    .Configure<SiteOptions>(o => configuration.GetSection("Site").Bind(o))
     .Configure<ForwardedHeadersOptions>(options =>
     {
         options.KnownNetworks.Clear();
