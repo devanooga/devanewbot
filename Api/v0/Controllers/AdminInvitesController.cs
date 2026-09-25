@@ -66,7 +66,35 @@ public class AdminInvitesController(DevanewbotContext db, InviteService inviteSe
     [HttpGet("{id}")]
     public async Task<IActionResult> Get([FromRoute] Guid id)
     {
-        var invite = await Db.Invites.AsNoTracking().SingleOrDefaultAsync(invite => invite.Id == id);
+        var invite = await Db.Invites.AsNoTracking()
+            .Where(invite => invite.Id == id)
+            .Select(invite => new
+            {
+                invite.Id,
+                invite.Email,
+                invite.Ip,
+                Source = invite.Source.ToString(),
+                Status = invite.Status.ToString(),
+                invite.Flag,
+                invite.FlagMessage,
+                invite.City,
+                invite.Region,
+                invite.Country,
+                invite.Isp,
+                invite.Proxy,
+                invite.Hosting,
+                invite.Mobile,
+                invite.LocationJson,
+                invite.SlackChannelId,
+                invite.SlackMessageTs,
+                invite.CreatedAt,
+                invite.DecidedAt,
+                invite.DecidedBy,
+                invite.DecidedBySlackUserId,
+                DecisionSource = invite.DecisionSource.ToString(),
+                invite.Error
+            })
+            .SingleOrDefaultAsync();
         return invite is null ? NotFound() : Ok(invite);
     }
 
