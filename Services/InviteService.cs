@@ -314,8 +314,8 @@ public class InviteService(
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = Channel,
-            Parse = ParseMode.Full,
-            Text = text
+            Text = text,
+            Blocks = [new SectionBlock { Text = new Markdown(text) }]
         });
         return result;
     }
