@@ -26,10 +26,13 @@
                 <span class="font-weight-medium">{{ item.callsign }}</span>
             </template>
             <template #[`item.bandMode`]="{ item }">
-                <v-chip size="small" variant="tonal">{{ item.band }}</v-chip>
-                <span class="ml-2 text-medium-emphasis">{{ item.mode }}</span>
+                <span class="text-no-wrap">
+                    <v-chip size="small" variant="tonal">{{ item.band }}</v-chip>
+                    <span class="ml-2 text-medium-emphasis">{{ item.mode }}</span>
+                </span>
             </template>
             <template #[`item.closedAt`]="{ item }">
+                <div class="d-flex flex-nowrap ga-1">
                 <v-tooltip :text="stateHint(item)" location="top">
                     <template #activator="{ props }">
                         <v-chip v-bind="props" size="small" variant="tonal" :color="stateColor(item.state)">
@@ -43,11 +46,10 @@
                     location="top"
                 >
                     <template #activator="{ props }">
-                        <v-chip v-bind="props" size="small" variant="tonal" color="warning" class="ml-1">
-                            held back
-                        </v-chip>
+                        <v-chip v-bind="props" size="small" variant="tonal" color="warning">held back</v-chip>
                     </template>
                 </v-tooltip>
+                </div>
             </template>
             <template #[`item.lastHeardAt`]="{ item }">{{ ago(item.lastHeardAt) }}</template>
             <template #[`item.furthestKm`]="{ item }">
@@ -57,7 +59,7 @@
                 </span>
             </template>
             <template #[`item.bestSnr`]="{ item }">
-                <span v-if="item.bestSnr != null">
+                <span v-if="item.bestSnr != null" class="text-no-wrap">
                     {{ item.bestSnr }} dB
                     <span class="text-medium-emphasis">{{ item.bestSnrReporter }}</span>
                 </span>
@@ -152,15 +154,15 @@ function stateHint(session: Session): string {
 }
 
 const headers = [
-    { title: "Callsign", key: "callsign" },
-    { title: "Band / mode", key: "bandMode", sortable: false },
-    { title: "Grid", key: "grid" },
-    { title: "State", key: "closedAt" },
-    { title: "Last heard", key: "lastHeardAt" },
-    { title: "Spots", key: "spotCount" },
-    { title: "Reporters", key: "reporterCount" },
-    { title: "Furthest", key: "furthestKm" },
-    { title: "Best signal", key: "bestSnr" },
+    { title: "Callsign", key: "callsign", nowrap: true },
+    { title: "Band / mode", key: "bandMode", sortable: false, nowrap: true },
+    { title: "Grid", key: "grid", nowrap: true },
+    { title: "State", key: "closedAt", nowrap: true },
+    { title: "Last heard", key: "lastHeardAt", nowrap: true },
+    { title: "Spots", key: "spotCount", align: "end" as const, nowrap: true },
+    { title: "Reporters", key: "reporterCount", align: "end" as const, nowrap: true },
+    { title: "Furthest", key: "furthestKm", nowrap: true },
+    { title: "Best signal", key: "bestSnr", nowrap: true },
     { title: "", key: "actions", sortable: false, align: "end" as const },
 ];
 
