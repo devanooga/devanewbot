@@ -33,22 +33,22 @@
             </template>
             <template #[`item.closedAt`]="{ item }">
                 <div class="d-flex flex-nowrap ga-1">
-                <v-tooltip :text="stateHint(item)" location="top">
-                    <template #activator="{ props }">
-                        <v-chip v-bind="props" size="small" variant="tonal" :color="stateColor(item.state)">
-                            {{ item.state === "quiet" ? "likely QRT" : item.state }}
-                        </v-chip>
-                    </template>
-                </v-tooltip>
-                <v-tooltip
-                    v-if="item.suppressed"
-                    text="Held back: too few reporters against a concurrent session on another band"
-                    location="top"
-                >
-                    <template #activator="{ props }">
-                        <v-chip v-bind="props" size="small" variant="tonal" color="warning">held back</v-chip>
-                    </template>
-                </v-tooltip>
+                    <v-tooltip :text="stateHint(item)" location="top">
+                        <template #activator="{ props }">
+                            <v-chip v-bind="props" size="small" variant="tonal" :color="stateColor(item.state)">
+                                {{ item.state === "quiet" ? "likely QRT" : item.state }}
+                            </v-chip>
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip
+                        v-if="item.suppressed"
+                        text="Held back: too few reporters against a concurrent session on another band"
+                        location="top"
+                    >
+                        <template #activator="{ props }">
+                            <v-chip v-bind="props" size="small" variant="tonal" color="warning">held back</v-chip>
+                        </template>
+                    </v-tooltip>
                 </div>
             </template>
             <template #[`item.lastHeardAt`]="{ item }">{{ ago(item.lastHeardAt) }}</template>
