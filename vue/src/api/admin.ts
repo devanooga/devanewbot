@@ -31,6 +31,8 @@ export interface ModerationAction {
     targetSlackUserId: string | null;
     channelId: string | null;
     removedMessageText: string | null;
+    hiddenAt: string | null;
+    hiddenBy: string | null;
 }
 
 export interface ModerationActionInput {
@@ -302,8 +304,10 @@ export const api = {
             .then((r) => r.data),
     removeMessages: (removal: Removal) =>
         axios.post<RemovalResult>("/api/v0/admin/moderation/removals", removal).then((r) => r.data),
-    deleteModeration: (id: string) =>
-        axios.delete<ModerationAction[]>(`/api/v0/admin/moderation/${id}`).then((r) => r.data),
+    hideModeration: (id: string, hidden: boolean) =>
+        axios
+            .post<ModerationAction[]>(`/api/v0/admin/moderation/${id}/${hidden ? "hide" : "unhide"}`)
+            .then((r) => r.data),
 
     users: () => axios.get<Account[]>("/api/v0/admin/users").then((r) => r.data),
     createUser: (email: string, password: string) =>

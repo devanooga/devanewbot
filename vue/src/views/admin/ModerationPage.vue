@@ -15,13 +15,15 @@
                 @keyup.enter="load"
             />
             <v-btn variant="tonal" :loading="loading" @click="load">Search</v-btn>
+            <v-switch v-model="showHidden" label="Show hidden" color="primary" density="compact" hide-details />
             <v-btn variant="tonal" prepend-icon="mdi-message-minus" to="/admin/moderation/remove">Remove messages</v-btn>
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">Log an action</v-btn>
         </v-card-title>
 
         <v-data-table
             :headers="headers"
-            :items="actions"
+            :items="visibleActions"
+            :row-props="rowProps"
             :loading="loading"
             item-value="id"
             :items-per-page="25"
@@ -31,6 +33,9 @@
             <template #[`item.action`]="{ item }">
                 <InlineText class="wrap" :text="item.action" />
                 <div class="text-caption text-medium-emphasis">{{ kindLabel(item.kind) }} · {{ sourceLabel(item.source) }}</div>
+                <div v-if="item.hiddenAt" class="text-caption text-warning">
+                    Hidden from the public log by {{ item.hiddenBy }} on {{ when(item.hiddenAt) }}
+                </div>
             </template>
             <template #[`item.reason`]="{ item }">
                 <InlineText class="wrap" :text="item.reason" />
@@ -39,12 +44,23 @@
                 <div class="d-flex ga-1 justify-end">
                     <v-btn size="small" variant="text" icon="mdi-pencil" aria-label="Edit" @click="openEdit(item)" />
                     <v-btn
+                        v-if="item.hiddenAt"
                         size="small"
                         variant="text"
-                        color="error"
-                        icon="mdi-delete"
-                        aria-label="Delete"
-                        @click="confirmDelete(item)"
+                        icon="mdi-eye"
+                        aria-label="Unhide"
+                        v-tooltip="'Show on the public log again'"
+                        :loading="busy && target?.id === item.id"
+                        @click="unhide(item)"
+                    />
+                    <v-btn
+                        v-else
+                        size="small"
+                        variant="text"
+                        icon="mdi-eye-off"
+                        aria-label="Hide"
+                        v-tooltip="'Hide from the public log'"
+                        @click="confirmHide(item)"
                     />
                 </div>
             </template>
@@ -89,21 +105,23 @@
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="deleting" max-width="420">
+    <v-dialog v-model="hiding" max-width="420">
         <v-card>
-            <v-card-title>Delete this entry?</v-card-title>
-            <v-card-text class="text-medium-emphasis">It disappears from the public log too.</v-card-text>
+            <v-card-title>Hide this entry?</v-card-title>
+            <v-card-text class="text-medium-emphasis">
+                It comes off the public log but stays here, and you can unhide it later.
+            </v-card-text>
             <v-card-actions>
                 <v-spacer />
-                <v-btn variant="text" @click="deleting = false">Cancel</v-btn>
-                <v-btn color="error" :loading="busy" @click="remove">Delete</v-btn>
+                <v-btn variant="text" @click="hiding = false">Cancel</v-btn>
+                <v-btn color="warning" :loading="busy" @click="hide">Hide</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { api, errorMessage, ModerationAction, ModerationKinds } from "@/api/admin";
 import { useNotice } from "@/composables/useNotice";
 import { when } from "@/composables/useFormat";
@@ -142,9 +160,18 @@ const search = ref("");
 const loading = ref(false);
 const busy = ref(false);
 const editing = ref(false);
-const deleting = ref(false);
+const hiding = ref(false);
+const showHidden = ref(false);
 const target = ref<ModerationAction | null>(null);
 const form = reactive({ action: "", reason: "", occurredAt: "" });
+
+const visibleActions = computed(() =>
+    showHidden.value ? actions.value : actions.value.filter((action) => !action.hiddenAt),
+);
+
+function rowProps({ item }: { item: ModerationAction }) {
+    return item.hiddenAt ? { class: "hidden-entry" } : {};
+}
 
 function kindLabel(value: string): string {
     return kindLabels[value] ?? value;
@@ -206,26 +233,33 @@ async function save() {
     }
 }
 
-function confirmDelete(action: ModerationAction) {
+function confirmHide(action: ModerationAction) {
     target.value = action;
-    deleting.value = true;
+    hiding.value = true;
 }
 
-async function remove() {
-    if (!target.value) {
-        return;
-    }
-
+async function setHidden(action: ModerationAction, hidden: boolean) {
+    target.value = action;
     busy.value = true;
     try {
-        actions.value = await api.deleteModeration(target.value.id);
-        notify("Entry deleted.");
-        deleting.value = false;
+        actions.value = await api.hideModeration(action.id, hidden);
+        notify(hidden ? "Hidden from the public log." : "Back on the public log.");
+        hiding.value = false;
     } catch (failure) {
-        notify(errorMessage(failure, "Could not delete the entry."), "error");
+        notify(errorMessage(failure, "Could not update the entry."), "error");
     } finally {
         busy.value = false;
     }
+}
+
+async function hide() {
+    if (target.value) {
+        await setHidden(target.value, true);
+    }
+}
+
+async function unhide(action: ModerationAction) {
+    await setHidden(action, false);
 }
 
 onMounted(load);
@@ -235,6 +269,10 @@ onMounted(load);
 .wrap {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+:deep(.hidden-entry) {
+    opacity: 0.6;
 }
 
 .removed {

@@ -14,6 +14,7 @@ public class ModerationController(DevanewbotContext db) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> List() =>
         Ok(await db.ModerationActions
+            .Where(action => action.HiddenAt == null)
             .OrderByDescending(action => action.OccurredAt)
             .Select(action => new { action.Id, action.OccurredAt, action.Action, action.Reason, action.Administrator })
             .ToListAsync());

@@ -59,7 +59,6 @@ public class AdminModerationController(
             return Error("Say what was done.");
         }
 
-        var user = await UserManager.GetUserAsync(User);
         var slackUserId = await LinkedSlackUserId();
 
         await ModerationLog.Record(new ModerationAction
@@ -69,7 +68,7 @@ public class AdminModerationController(
             Source = ModerationActionSource.Admin,
             Action = model.Action.Trim(),
             Reason = model.Reason?.Trim() ?? "",
-            Administrator = slackUserId is null ? user?.Email ?? "admin" : await SlackDirectory.Name(slackUserId),
+            Administrator = await AdministratorName(slackUserId),
             AdministratorSlackUserId = slackUserId
         });
 
@@ -101,8 +100,8 @@ public class AdminModerationController(
         return await List();
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete([FromRoute] Guid id)
+    [HttpPost("{id}/hide")]
+    public async Task<IActionResult> Hide([FromRoute] Guid id)
     {
         var action = await Db.ModerationActions.FindAsync(id);
         if (action is null)
@@ -110,7 +109,23 @@ public class AdminModerationController(
             return NotFound();
         }
 
-        Db.ModerationActions.Remove(action);
+        action.HiddenAt = DateTime.UtcNow;
+        action.HiddenBy = await AdministratorName(await LinkedSlackUserId());
+        await Db.SaveChangesAsync();
+        return await List();
+    }
+
+    [HttpPost("{id}/unhide")]
+    public async Task<IActionResult> Unhide([FromRoute] Guid id)
+    {
+        var action = await Db.ModerationActions.FindAsync(id);
+        if (action is null)
+        {
+            return NotFound();
+        }
+
+        action.HiddenAt = null;
+        action.HiddenBy = null;
         await Db.SaveChangesAsync();
         return await List();
     }
@@ -165,6 +180,11 @@ public class AdminModerationController(
 
         return Ok(await MessageRemoval.Remove(administratorId, model.UserId, model.Messages, model.Reason.Trim(), model.Deactivate));
     }
+
+    private async Task<string> AdministratorName(string? slackUserId) =>
+        slackUserId is null
+            ? (await UserManager.GetUserAsync(User))?.Email ?? "admin"
+            : await SlackDirectory.Name(slackUserId);
 
     private async Task<string?> LinkedSlackUserId()
     {

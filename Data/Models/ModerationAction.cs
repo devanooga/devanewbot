@@ -36,6 +36,8 @@ public class ModerationAction : IEntityTypeConfiguration<ModerationAction>, ICre
     public string? TargetSlackUserId { get; set; }
     public string? ChannelId { get; set; }
     public string? RemovedMessageText { get; set; }
+    public DateTime? HiddenAt { get; set; }
+    public string? HiddenBy { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public void Configure(EntityTypeBuilder<ModerationAction> builder)
