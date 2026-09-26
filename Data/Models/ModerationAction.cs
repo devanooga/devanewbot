@@ -1,9 +1,11 @@
 namespace devanewbot.Data.Models;
 
 using System;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+[JsonConverter(typeof(JsonStringEnumConverter<ModerationActionKind>))]
 public enum ModerationActionKind
 {
     RemovedMessage,
@@ -13,6 +15,7 @@ public enum ModerationActionKind
     Other
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ModerationActionSource>))]
 public enum ModerationActionSource
 {
     Slack,
@@ -37,8 +40,6 @@ public class ModerationAction : IEntityTypeConfiguration<ModerationAction>, ICre
 
     public void Configure(EntityTypeBuilder<ModerationAction> builder)
     {
-        builder.Property(e => e.Kind).HasConversion<string>();
-        builder.Property(e => e.Source).HasConversion<string>();
         builder.HasIndex(e => e.OccurredAt);
         builder.HasIndex(e => e.TargetSlackUserId);
     }

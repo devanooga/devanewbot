@@ -30,7 +30,7 @@
             <template #[`item.occurredAt`]="{ item }">{{ when(item.occurredAt) }}</template>
             <template #[`item.action`]="{ item }">
                 <InlineText class="wrap" :text="item.action" />
-                <div class="text-caption text-medium-emphasis">{{ kindLabel(item.kind) }} · {{ item.source }}</div>
+                <div class="text-caption text-medium-emphasis">{{ kindLabel(item.kind) }} · {{ sourceLabel(item.source) }}</div>
             </template>
             <template #[`item.reason`]="{ item }">
                 <InlineText class="wrap" :text="item.reason" />
@@ -128,6 +128,12 @@ const kindLabels: Record<string, string> = {
     Other: "Other",
 };
 
+const sourceLabels: Record<string, string> = {
+    Slack: "from Slack",
+    Admin: "from the admin panel",
+    Imported: "imported from the old log",
+};
+
 const kindOptions = [{ title: "All", value: "" }, ...ModerationKinds.map((k) => ({ title: kindLabels[k], value: k }))];
 
 const actions = ref<ModerationAction[]>([]);
@@ -142,6 +148,10 @@ const form = reactive({ action: "", reason: "", occurredAt: "" });
 
 function kindLabel(value: string): string {
     return kindLabels[value] ?? value;
+}
+
+function sourceLabel(value: string): string {
+    return sourceLabels[value] ?? value;
 }
 
 function localInput(value: Date): string {
