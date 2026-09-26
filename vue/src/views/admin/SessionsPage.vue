@@ -26,13 +26,13 @@
                 <span class="font-weight-medium">{{ item.callsign }}</span>
             </template>
             <template #[`item.bandMode`]="{ item }">
-                <span class="text-no-wrap">
+                <div class="d-flex align-center flex-nowrap ga-2">
                     <v-chip size="small" variant="tonal">{{ item.band }}</v-chip>
-                    <span class="ml-2 text-medium-emphasis">{{ item.mode }}</span>
-                </span>
+                    <span class="text-medium-emphasis">{{ item.mode }}</span>
+                </div>
             </template>
             <template #[`item.closedAt`]="{ item }">
-                <div class="d-flex flex-nowrap ga-1">
+                <div class="d-flex align-center flex-nowrap ga-1">
                     <v-tooltip :text="stateHint(item)" location="top">
                         <template #activator="{ props }">
                             <v-chip v-bind="props" size="small" variant="tonal" :color="stateColor(item.state)">
@@ -46,7 +46,13 @@
                         location="top"
                     >
                         <template #activator="{ props }">
-                            <v-chip v-bind="props" size="small" variant="tonal" color="warning">held back</v-chip>
+                            <v-icon
+                                v-bind="props"
+                                icon="mdi-pause-circle"
+                                color="warning"
+                                size="small"
+                                aria-label="Held back"
+                            />
                         </template>
                     </v-tooltip>
                 </div>
