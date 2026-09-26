@@ -9,6 +9,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: "Join the community" },
     },
     {
+        path: "/moderation",
+        name: "moderation",
+        component: () => import("../views/moderation/ModerationLog.vue"),
+        meta: { title: "Moderation log" },
+    },
+    {
         path: "/admin/login",
         name: "admin-login",
         component: () => import("../views/admin/LoginPage.vue"),
@@ -49,6 +55,18 @@ const routes: Array<RouteRecordRaw> = [
                 name: "admin-bans",
                 component: () => import("../views/admin/BansPage.vue"),
                 meta: { title: "Channel bans" },
+            },
+            {
+                path: "moderation",
+                name: "admin-moderation",
+                component: () => import("../views/admin/ModerationPage.vue"),
+                meta: { title: "Moderation log" },
+            },
+            {
+                path: "moderation/remove",
+                name: "admin-remove-messages",
+                component: () => import("../views/admin/RemoveMessagesPage.vue"),
+                meta: { title: "Remove messages" },
             },
             {
                 path: "logs",

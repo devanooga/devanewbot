@@ -1,6 +1,5 @@
 namespace SlackDotNet;
 
-using System.Net.Http;
 using System.Threading.Tasks;
 using devanewbot.SlackDotNet.Options;
 using Flurl.Http;
@@ -39,7 +38,7 @@ public class Slack(IOptions<SlackOptions> options)
     public async Task<(bool Success, string Error)> DisableUser(string userId)
     {
         var response = await $"https://devanooga.slack.com/api/users.admin.setInactive"
-            .SendJsonAsync(HttpMethod.Delete, new
+            .PostUrlEncodedAsync(new
             {
                 token = Options.LegacyToken,
                 user = userId

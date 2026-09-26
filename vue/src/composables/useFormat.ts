@@ -42,3 +42,32 @@ export function megahertz(hz: number): string {
 export function count(value: number): string {
     return value.toLocaleString();
 }
+
+export interface InlineSegment {
+    kind: "text" | "code" | "link";
+    text: string;
+    href?: string;
+}
+
+// The imported history was written as GitHub markdown, so it carries `code` spans and [links](url).
+export function inlineSegments(value: string): InlineSegment[] {
+    const segments: InlineSegment[] = [];
+    const pattern = /`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+    let last = 0;
+    for (const match of value.matchAll(pattern)) {
+        const index = match.index ?? 0;
+        if (index > last) {
+            segments.push({ kind: "text", text: value.slice(last, index) });
+        }
+        segments.push(
+            match[1] !== undefined
+                ? { kind: "code", text: match[1] }
+                : { kind: "link", text: match[2], href: match[3] },
+        );
+        last = index + match[0].length;
+    }
+    if (last < value.length) {
+        segments.push({ kind: "text", text: value.slice(last) });
+    }
+    return segments;
+}

@@ -1,6 +1,7 @@
 namespace devanewbot.Api.v0.Controllers;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ public class AuthController(
 
     [HttpGet("slack/start")]
     [AllowAnonymous]
-    public async Task<IActionResult> StartSlack([FromQuery] string mode = "login")
+    public async Task<IActionResult> StartSlack([FromQuery] string mode = "login", [FromQuery] string? next = null)
     {
         if (!SlackSignIn.Configured)
         {
@@ -44,7 +45,8 @@ public class AuthController(
         }
 
         var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-        Response.Cookies.Append(SlackStateCookie, $"{state}:{(mode == "link" ? "link" : "login")}", new CookieOptions
+        var destination = IsLocalAdminPath(next) ? next : "";
+        Response.Cookies.Append(SlackStateCookie, $"{state}:{(mode == "link" ? "link" : "login")}:{destination}", new CookieOptions
         {
             HttpOnly = true,
             Secure = Request.IsHttps,
@@ -59,7 +61,7 @@ public class AuthController(
     [AllowAnonymous]
     public async Task<IActionResult> SlackCallback([FromQuery] string? code, [FromQuery] string? state)
     {
-        var expected = Request.Cookies[SlackStateCookie]?.Split(':');
+        var expected = Request.Cookies[SlackStateCookie]?.Split(':', 3);
         Response.Cookies.Delete(SlackStateCookie);
         var linking = expected?.ElementAtOrDefault(1) == "link";
         var failurePage = linking ? "/admin/account" : "/admin/login";
@@ -99,7 +101,8 @@ public class AuthController(
             }
 
             await SignInManager.SignInAsync(owner, isPersistent: true);
-            return Redirect("/admin/dashboard");
+            var next = expected.ElementAtOrDefault(2);
+            return Redirect(IsLocalAdminPath(next) ? next : "/admin/dashboard");
         }
 
         var user = await UserManager.GetUserAsync(User);
@@ -217,6 +220,9 @@ public class AuthController(
             await UserManager.RemoveLoginAsync(user, login.LoginProvider, login.ProviderKey);
         }
     }
+
+    private static bool IsLocalAdminPath([NotNullWhen(true)] string? path) =>
+        path is not null && path.StartsWith("/admin/") && !path.Contains("//") && !path.Contains('\\');
 
     private string SlackRedirectUri() =>
         $"{(Site.BaseUrlConfigured ? Site.BaseUrl!.TrimEnd('/') : $"{Request.Scheme}://{Request.Host}")}/api/v0/auth/slack/callback";

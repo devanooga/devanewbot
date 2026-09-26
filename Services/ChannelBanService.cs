@@ -16,7 +16,9 @@ public class ChannelBanService(
     ILogger<ChannelBanService> logger,
     DevanewbotContext devanewbotContext,
     ISlackApiClient client,
-    IOptions<SlackOptions> slackOptions) : IChannelBanService
+    IOptions<SlackOptions> slackOptions,
+    SlackDirectory directory,
+    ModerationLog moderationLog) : IChannelBanService
 {
     public async Task AddBan(string channelId, string userId, string banningUserId, string reason, DateTime? expiresAt = null)
     {
@@ -74,9 +76,17 @@ public class ChannelBanService(
                 + (expiresAt.HasValue ? $" The ban will expire on {expiresAt.Value:yyyy-MM-dd}." : "")
         });
 
+        await moderationLog.RecordFromSlack(
+            ModerationActionKind.ChannelBan,
+            $"Issued channel ban for {await directory.Name(userId)} in {await directory.ChannelLabel(channelId)}"
+                + (expiresAt.HasValue ? $" until {expiresAt.Value:yyyy-MM-dd}" : ""),
+            reason,
+            banningUserId,
+            userId,
+            channelId);
     }
 
-    public async Task RemoveBan(string channelId, string userId)
+    public async Task RemoveBan(string channelId, string userId, string? liftingUserId = null)
     {
         logger.LogInformation("Removing ban for user {UserId} in channel {ChannelId}", userId, channelId);
 
@@ -99,6 +109,16 @@ public class ChannelBanService(
             Text = $"You have been unbanned from <#{channelId}>."
         });
 
+        if (liftingUserId is not null)
+        {
+            await moderationLog.RecordFromSlack(
+                ModerationActionKind.ChannelBanLifted,
+                $"Lifted channel ban for {await directory.Name(userId)} in {await directory.ChannelLabel(channelId)}",
+                "",
+                liftingUserId,
+                userId,
+                channelId);
+        }
     }
 
     public async Task CheckExpirations()

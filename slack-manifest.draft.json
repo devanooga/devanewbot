@@ -31,6 +31,17 @@
                 "should_escape": false
             },
             {
+                "command": "/deactivate",
+                "description": "Deactivate an account and log it (admins only)",
+                "should_escape": false
+            },
+            {
+                "command": "/modlog",
+                "description": "Log a moderation action (admins only)",
+                "usage_hint": "what was done",
+                "should_escape": false
+            },
+            {
                 "command": "/jif",
                 "description": "Search for a gif and post it",
                 "usage_hint": "search terms",
@@ -71,6 +82,14 @@
                 "usage_hint": "quote",
                 "should_escape": false
             }
+        ],
+        "shortcuts": [
+            {
+                "name": "Remove messages",
+                "type": "message",
+                "callback_id": "remove-message",
+                "description": "Remove this and other recent messages by the author (admins only)"
+            }
         ]
     },
     "oauth_config": {
@@ -85,7 +104,9 @@
                 "users:read"
             ],
             "user": [
-                "channels:write"
+                "channels:write",
+                "chat:write",
+                "search:read"
             ]
         }
     },

@@ -56,6 +56,29 @@ public class SlackDirectory(ISlackApiClient client, IMemoryCache cache)
         return !user.Deleted && (user.IsAdmin || user.IsOwner || user.IsPrimaryOwner);
     }
 
+    public async Task<string> Name(string userId)
+    {
+        try
+        {
+            return DisplayName(await client.Users.Info(userId));
+        }
+        catch (SlackException)
+        {
+            return userId;
+        }
+    }
+
+    public async Task<string> ChannelLabel(string channelId)
+    {
+        if (channelId.StartsWith('D'))
+        {
+            return "a direct message";
+        }
+
+        var channel = (await Channels()).FirstOrDefault(channel => channel.Id == channelId);
+        return channel is null ? "a private channel" : $"#{channel.Name}";
+    }
+
     private static string DisplayName(User member) =>
         new[] { member.Profile?.DisplayName, member.RealName, member.Name }
             .First(name => !string.IsNullOrWhiteSpace(name))!;

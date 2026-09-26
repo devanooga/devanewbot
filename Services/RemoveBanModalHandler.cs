@@ -24,7 +24,7 @@ public class RemoveBanModalHandler(
 
         try
         {
-            await channelBanService.RemoveBan(metadata.ChannelId, userToUnban);
+            await channelBanService.RemoveBan(metadata.ChannelId, userToUnban, viewSubmission.User.Id);
         }
         catch (Exception e)
         {

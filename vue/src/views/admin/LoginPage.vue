@@ -61,7 +61,7 @@
                                         size="large"
                                         variant="outlined"
                                         prepend-icon="mdi-slack"
-                                        href="/api/v0/auth/slack/start"
+                                        :href="slackStartUrl"
                                     >
                                         Sign in with Slack
                                     </v-btn>
@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 import "@/plugins/vuetify-styles";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "@/composables/useAuth";
 import { api, errorMessage, isUnauthorized } from "@/api/admin";
@@ -92,6 +92,10 @@ const reveal = ref(false);
 const error = ref("");
 const busy = ref(false);
 const slackAvailable = ref(false);
+const slackStartUrl = computed(() => {
+    const next = route.query.next;
+    return typeof next === "string" ? `/api/v0/auth/slack/start?next=${encodeURIComponent(next)}` : "/api/v0/auth/slack/start";
+});
 
 const slackErrors: Record<string, string> = {
     unlinked: "No login matches that Slack account's email. Sign in with your password and link Slack on the Account page.",

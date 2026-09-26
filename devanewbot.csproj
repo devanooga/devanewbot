@@ -30,4 +30,8 @@
     <PackageReference Include="WebSocketExtensions" Version="3.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Seeders/Data/administrative-actions.md" LogicalName="administrative-actions.md" />
+  </ItemGroup>
+
 </Project>

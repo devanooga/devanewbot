@@ -62,6 +62,9 @@ builder.Services
     .AddScoped<HamSpotRetentionJob>()
     .AddScoped<ISeeder, RoleSeeder>()
     .AddScoped<ISeeder, AdminUserSeeder>()
+    .AddScoped<ISeeder, ModerationHistorySeeder>()
+    .AddScoped<ModerationLog>()
+    .AddScoped<MessageRemoval>()
     .AddTransient<IChannelBanService, ChannelBanService>()
     .AddScoped<SlackDirectory>()
     .AddScoped<SlackSignIn>()
@@ -83,6 +86,9 @@ builder.Services
             .RegisterSlashCommandHandler<StallmanCommand>("/stallman" + suffix)
             .RegisterSlashCommandHandler<ChannelBanCommand>("/channel-ban" + suffix)
             .RegisterSlashCommandHandler<RemoveBanCommand>("/remove-channel-ban" + suffix)
+            .RegisterSlashCommandHandler<DeactivateCommand>("/deactivate" + suffix)
+            .RegisterSlashCommandHandler<ModLogCommand>("/modlog" + suffix)
+            .RegisterMessageShortcutHandler<RemoveMessageShortcut>(RemoveMessageShortcut.CallbackId)
             .RegisterSlashCommandHandler<SimpsonsCommand>("/simpsons" + suffix)
             .RegisterSlashCommandHandler<FuturamaCommand>("/futurama" + suffix)
             .RegisterSlashCommandHandler<RickAndMortyCommand>("/rickandmorty" + suffix)
@@ -91,6 +97,8 @@ builder.Services
             .RegisterSlashCommandHandler<QrmBotCommand>("/qrm" + suffix)
             .RegisterViewSubmissionHandler<ChannelBanModalHandler>(ChannelBanModalHandler.ModalCallbackId)
             .RegisterViewSubmissionHandler<RemoveBanModalHandler>(RemoveBanModalHandler.ModalCallbackId)
+            .RegisterViewSubmissionHandler<DeactivateCommand>(DeactivateCommand.ModalCallbackId)
+            .RegisterViewSubmissionHandler<ModLogCommand>(ModLogCommand.ModalCallbackId)
             .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();
     })
     .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
@@ -98,6 +106,7 @@ builder.Services
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
     .Configure<HamAlertOptions>(o => configuration.GetSection("HamAlert").Bind(o))
     .Configure<SiteOptions>(o => configuration.GetSection("Site").Bind(o))
+    .Configure<ModerationOptions>(o => configuration.GetSection("Moderation").Bind(o))
     .Configure<ForwardedHeadersOptions>(options =>
     {
         options.KnownNetworks.Clear();

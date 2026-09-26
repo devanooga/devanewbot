@@ -19,6 +19,56 @@ export interface ChannelBan {
     active: boolean;
 }
 
+export interface ModerationAction {
+    id: string;
+    occurredAt: string;
+    kind: string;
+    source: string;
+    action: string;
+    reason: string;
+    administrator: string;
+    administratorSlackUserId: string | null;
+    targetSlackUserId: string | null;
+    channelId: string | null;
+    removedMessageText: string | null;
+}
+
+export interface ModerationActionInput {
+    action: string;
+    reason: string;
+    occurredAt: string | null;
+}
+
+export interface AuthoredMessage {
+    channelId: string;
+    channel: string;
+    ts: string;
+    postedAt: string;
+    text: string;
+    permalink: string | null;
+}
+
+export interface RecentMessages {
+    author: string;
+    authorIsAdmin: boolean;
+    messages: AuthoredMessage[];
+}
+
+export interface Removal {
+    userId: string;
+    messages: { channelId: string; ts: string; text: string }[];
+    reason: string;
+    deactivate: boolean;
+}
+
+export interface RemovalResult {
+    removed: number;
+    deactivated: boolean;
+    failures: string[];
+}
+
+export const ModerationKinds = ["RemovedMessage", "Deactivated", "ChannelBan", "ChannelBanLifted", "Other"];
+
 export interface SlackPerson {
     id: string;
     handle: string;
@@ -235,6 +285,25 @@ export const api = {
         axios
             .get<LogPage>("/api/v0/admin/logs", { params: { afterSequence, level, search: search || undefined } })
             .then((r) => r.data),
+
+    moderation: (kind: string, search: string) =>
+        axios
+            .get<ModerationAction[]>("/api/v0/admin/moderation", {
+                params: { kind: kind || undefined, search: search || undefined },
+            })
+            .then((r) => r.data),
+    createModeration: (input: ModerationActionInput) =>
+        axios.post<ModerationAction[]>("/api/v0/admin/moderation", input).then((r) => r.data),
+    updateModeration: (id: string, input: ModerationActionInput) =>
+        axios.put<ModerationAction[]>(`/api/v0/admin/moderation/${id}`, input).then((r) => r.data),
+    recentMessages: (userId: string, hours: number) =>
+        axios
+            .get<RecentMessages>("/api/v0/admin/moderation/messages", { params: { userId, hours } })
+            .then((r) => r.data),
+    removeMessages: (removal: Removal) =>
+        axios.post<RemovalResult>("/api/v0/admin/moderation/removals", removal).then((r) => r.data),
+    deleteModeration: (id: string) =>
+        axios.delete<ModerationAction[]>(`/api/v0/admin/moderation/${id}`).then((r) => r.data),
 
     users: () => axios.get<Account[]>("/api/v0/admin/users").then((r) => r.data),
     createUser: (email: string, password: string) =>

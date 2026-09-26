@@ -102,7 +102,7 @@ public class AdminBansController(
             return Error("Only Slack workspace admins can lift bans.");
         }
 
-        await ChannelBans.RemoveBan(ban.ChannelId, ban.UserId);
+        await ChannelBans.RemoveBan(ban.ChannelId, ban.UserId, liftingUserId);
         return await List();
     }
 
