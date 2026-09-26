@@ -28,10 +28,14 @@ export function useAuth() {
         resolved.value = true;
     }
 
+    function update(current: CurrentUser) {
+        user.value = current;
+    }
+
     function clear() {
         user.value = null;
         resolved.value = true;
     }
 
-    return { user, resolve, login, logout, clear };
+    return { user, resolve, login, logout, update, clear };
 }

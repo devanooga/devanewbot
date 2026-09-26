@@ -63,6 +63,8 @@ builder.Services
     .AddScoped<ISeeder, RoleSeeder>()
     .AddScoped<ISeeder, AdminUserSeeder>()
     .AddTransient<IChannelBanService, ChannelBanService>()
+    .AddScoped<SlackDirectory>()
+    .AddScoped<SlackSignIn>()
     .AddSlackNet(c =>
     {
         c

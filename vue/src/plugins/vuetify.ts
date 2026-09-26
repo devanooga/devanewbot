@@ -11,7 +11,9 @@ export default createVuetify({
         VCard: { rounded: "lg" },
         VTextField: { variant: "outlined", density: "comfortable", hideDetails: "auto" },
         VSelect: { variant: "outlined", density: "comfortable", hideDetails: "auto" },
-        VDataTable: { density: "comfortable" },
+        VAutocomplete: { variant: "outlined", density: "comfortable", hideDetails: "auto" },
+        VTextarea: { variant: "outlined", density: "comfortable", hideDetails: "auto" },
+        VDataTable: { density: "comfortable", mobileBreakpoint: "md" },
         VBtn: { variant: "flat" },
     },
     theme: {

@@ -101,7 +101,8 @@ const { user, logout } = useAuth();
 const { status, refreshedAt, failure, refresh, startAutoRefresh } = useAdminData();
 const { showNotice, noticeText, noticeColor } = useNotice();
 
-const drawer = ref(true);
+// null lets Vuetify open the drawer on desktop and start it closed as an overlay on narrow screens.
+const drawer = ref<boolean | null>(null);
 const refreshing = ref(false);
 
 const isDark = computed(() => theme.global.current.value.dark);
@@ -117,6 +118,7 @@ const pages = computed(() => [
     { to: "/admin/sessions", icon: "mdi-radio-tower", title: "Sessions", badge: liveSessions.value },
     { to: "/admin/watch-list", icon: "mdi-account-search", title: "Watch list", badge: 0 },
     { to: "/admin/invites", icon: "mdi-email-fast", title: "Invites", badge: 0 },
+    { to: "/admin/bans", icon: "mdi-gavel", title: "Channel bans", badge: 0 },
     { to: "/admin/logs", icon: "mdi-text-box-search", title: "Logs", badge: 0 },
     { to: "/admin/users", icon: "mdi-shield-account", title: "Users", badge: 0 },
 ]);

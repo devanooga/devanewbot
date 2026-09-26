@@ -49,7 +49,14 @@ public class ChannelBanService(
         });
         await devanewbotContext.SaveChangesAsync();
 
-        await client.WithAccessToken(slackOptions.Value.UserToken).Conversations.Kick(channelId, userId);
+        try
+        {
+            await client.WithAccessToken(slackOptions.Value.UserToken).Conversations.Kick(channelId, userId);
+        }
+        catch (SlackException exception) when (exception.ErrorCode == "not_in_channel")
+        {
+            // MemberJoinedChannelHandler kicks them if they join later.
+        }
 
         // Alert the channel to the ban
         await client.Chat.PostMessage(new Message

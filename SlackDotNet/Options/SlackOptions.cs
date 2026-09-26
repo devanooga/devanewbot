@@ -8,4 +8,10 @@ public class SlackOptions
     public string VerificationToken { get; set; } = null!;
     public string LegacyToken { get; set; } = null!;
     public string GeneralChannelId { get; set; } = null!;
+    public string? ClientId { get; set; }
+    public string? ClientSecret { get; set; }
+
+    public bool SignInConfigured =>
+        !string.IsNullOrWhiteSpace(ClientId) && !ClientId.StartsWith("#{")
+        && !string.IsNullOrWhiteSpace(ClientSecret) && !ClientSecret.StartsWith("#{");
 }

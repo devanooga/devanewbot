@@ -44,6 +44,10 @@
             :items-per-page="25"
         >
             <template #[`item.createdAt`]="{ item }">{{ when(item.createdAt) }}</template>
+            <template #[`item.email`]="{ item }">
+                <div>{{ emailLocalPart(item.email) }}<wbr />{{ emailDomain(item.email) }}</div>
+                <div class="text-caption text-medium-emphasis ip">{{ item.ip }}</div>
+            </template>
             <template #[`item.location`]="{ item }">
                 <div>{{ [item.city, item.region, item.country].filter(Boolean).join(", ") }}</div>
                 <div class="text-caption text-medium-emphasis">
@@ -60,18 +64,20 @@
                 </div>
             </template>
             <template #[`item.flag`]="{ item }">
-                <v-chip v-if="item.flag" size="small" variant="tonal" :color="flagColor(item.flag)">
-                    {{ item.flagMessage ?? item.flag }}
-                </v-chip>
+                <div v-if="item.flag" class="d-flex ga-1 text-body-2" :class="`text-${flagColor(item.flag)}`">
+                    <v-icon :icon="flagIcon(item.flag)" size="small" class="mt-half" />
+                    <span>{{ item.flagMessage ?? item.flag }}</span>
+                </div>
             </template>
             <template #[`item.status`]="{ item }">
                 <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
                     {{ item.status }}
                 </v-chip>
+                <div class="text-caption text-medium-emphasis">{{ item.source }}</div>
                 <div v-if="item.error" class="text-caption text-error">{{ item.error }}</div>
             </template>
             <template #[`item.decidedBy`]="{ item }">
-                <div v-if="item.decidedBy">{{ item.decidedBy }}</div>
+                <div v-if="item.decidedBy">{{ emailLocalPart(item.decidedBy) }}<wbr />{{ emailDomain(item.decidedBy) }}</div>
                 <div class="text-caption text-medium-emphasis">
                     {{ item.decisionSource }}
                     <span v-if="item.decidedAt"> · {{ when(item.decidedAt) }}</span>
@@ -80,12 +86,26 @@
             <template #[`item.actions`]="{ item }">
                 <div class="d-flex ga-1 justify-end">
                     <template v-if="item.status === 'Pending'">
-                        <v-btn size="small" color="success" variant="tonal" :loading="busy" @click="decide(item, true)">
-                            Approve
-                        </v-btn>
-                        <v-btn size="small" color="error" variant="tonal" :loading="busy" @click="decide(item, false)">
-                            Decline
-                        </v-btn>
+                        <v-btn
+                            size="small"
+                            color="success"
+                            variant="tonal"
+                            icon="mdi-check"
+                            aria-label="Approve"
+                            v-tooltip="'Approve'"
+                            :loading="busy"
+                            @click="decide(item, true)"
+                        />
+                        <v-btn
+                            size="small"
+                            color="error"
+                            variant="tonal"
+                            icon="mdi-close"
+                            aria-label="Decline"
+                            v-tooltip="'Decline'"
+                            :loading="busy"
+                            @click="decide(item, false)"
+                        />
                     </template>
                     <v-btn size="small" variant="text" icon="mdi-information-outline" @click="open(item.id)" />
                 </div>
@@ -134,13 +154,11 @@ const router = useRouter();
 
 const headers = [
     { title: "Requested", key: "createdAt" },
-    { title: "Email", key: "email" },
-    { title: "IP", key: "ip" },
-    { title: "Location", key: "location", sortable: false },
-    { title: "Flag", key: "flag", sortable: false },
-    { title: "Source", key: "source" },
+    { title: "Email / IP", key: "email", minWidth: "160px" },
+    { title: "Location", key: "location", sortable: false, minWidth: "140px" },
+    { title: "Flag", key: "flag", sortable: false, minWidth: "140px" },
     { title: "Status", key: "status" },
-    { title: "Decided by", key: "decidedBy" },
+    { title: "Decided by", key: "decidedBy", minWidth: "140px" },
     { title: "", key: "actions", sortable: false, align: "end" as const },
 ];
 
@@ -197,6 +215,20 @@ const prettyLocation = computed(() => {
 
 function flagColor(flag: string): string {
     return flag === "Green" ? "success" : flag === "Red" ? "error" : "warning";
+}
+
+function emailLocalPart(email: string): string {
+    const at = email.indexOf("@");
+    return at < 0 ? email : email.slice(0, at);
+}
+
+function emailDomain(email: string): string {
+    const at = email.indexOf("@");
+    return at < 0 ? "" : email.slice(at);
+}
+
+function flagIcon(flag: string): string {
+    return flag === "Green" ? "mdi-check-circle" : flag === "Red" ? "mdi-alert-octagon" : "mdi-alert";
 }
 
 function statusColor(status: string): string {
@@ -289,6 +321,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.mt-half {
+    margin-top: 2px;
+}
+
+.ip {
+    word-break: break-all;
+}
+
 .geoip {
     font-size: 0.8rem;
     white-space: pre-wrap;

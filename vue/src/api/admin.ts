@@ -3,6 +3,37 @@ import axios from "axios";
 export interface CurrentUser {
     email: string;
     roles: string[];
+    slack: { userId: string; name: string | null } | null;
+}
+
+export interface ChannelBan {
+    id: string;
+    userId: string;
+    channelId: string;
+    reason: string;
+    bannedBy: string;
+    bannedAt: string;
+    expiresAt: string | null;
+    liftedEarly: boolean;
+    active: boolean;
+}
+
+export interface SlackPerson {
+    id: string;
+    handle: string;
+    name: string;
+}
+
+export interface SlackChannel {
+    id: string;
+    name: string;
+}
+
+export interface NewBan {
+    userId: string;
+    channelId: string;
+    reason: string;
+    expiresOn: string | null;
 }
 
 export interface Feed {
@@ -161,6 +192,15 @@ export function isUnauthorized(failure: unknown): boolean {
 
 export const api = {
     me: () => axios.get<CurrentUser>("/api/v0/auth/me").then((r) => r.data),
+    providers: () => axios.get<{ slack: boolean }>("/api/v0/auth/providers").then((r) => r.data),
+    unlinkSlack: () => axios.delete<CurrentUser>("/api/v0/auth/slack").then((r) => r.data),
+    bans: () => axios.get<ChannelBan[]>("/api/v0/admin/bans").then((r) => r.data),
+    slackDirectory: () =>
+        axios
+            .get<{ people: SlackPerson[]; channels: SlackChannel[] }>("/api/v0/admin/bans/directory")
+            .then((r) => r.data),
+    createBan: (ban: NewBan) => axios.post<ChannelBan[]>("/api/v0/admin/bans", ban).then((r) => r.data),
+    liftBan: (id: string) => axios.post<ChannelBan[]>(`/api/v0/admin/bans/${id}/lift`).then((r) => r.data),
     login: (email: string, password: string) =>
         axios.post<CurrentUser>("/api/v0/auth/login", { email, password }).then((r) => r.data),
     logout: () => axios.post("/api/v0/auth/logout"),

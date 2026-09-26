@@ -45,6 +45,12 @@ const routes: Array<RouteRecordRaw> = [
                 meta: { title: "Invites" },
             },
             {
+                path: "bans",
+                name: "admin-bans",
+                component: () => import("../views/admin/BansPage.vue"),
+                meta: { title: "Channel bans" },
+            },
+            {
                 path: "logs",
                 name: "admin-logs",
                 component: () => import("../views/admin/LogsPage.vue"),

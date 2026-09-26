@@ -53,6 +53,19 @@
                                         Log in
                                     </v-btn>
                                 </v-form>
+
+                                <template v-if="slackAvailable">
+                                    <div class="text-caption text-medium-emphasis text-center my-3">or</div>
+                                    <v-btn
+                                        block
+                                        size="large"
+                                        variant="outlined"
+                                        prepend-icon="mdi-slack"
+                                        href="/api/v0/auth/slack/start"
+                                    >
+                                        Sign in with Slack
+                                    </v-btn>
+                                </template>
                             </v-card-text>
                         </v-card>
                     </v-col>
@@ -64,10 +77,10 @@
 
 <script setup lang="ts">
 import "@/plugins/vuetify-styles";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "@/composables/useAuth";
-import { errorMessage, isUnauthorized } from "@/api/admin";
+import { api, errorMessage, isUnauthorized } from "@/api/admin";
 
 const route = useRoute();
 const router = useRouter();
@@ -78,6 +91,23 @@ const password = ref("");
 const reveal = ref(false);
 const error = ref("");
 const busy = ref(false);
+const slackAvailable = ref(false);
+
+const slackErrors: Record<string, string> = {
+    unlinked: "That Slack account is not linked to a login. Sign in with your password and link it on the Account page.",
+    rejected: "Slack did not confirm an account in this workspace.",
+    "not-admin": "Only Slack workspace admins can sign in with Slack.",
+    expired: "The Slack sign-in expired. Try again.",
+};
+
+onMounted(async () => {
+    error.value = slackErrors[route.query.slack as string] ?? "";
+    try {
+        slackAvailable.value = (await api.providers()).slack;
+    } catch {
+        slackAvailable.value = false;
+    }
+});
 
 async function submit() {
     busy.value = true;
