@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SlackNet;
 
-public record SlackIdentity(string UserId, string Name);
+public record SlackIdentity(string UserId, string Name, string? VerifiedEmail);
 
 public class SlackSignIn(
     ILogger<SlackSignIn> logger,
@@ -29,7 +29,7 @@ public class SlackSignIn(
         "https://slack.com/openid/connect/authorize".SetQueryParams(new
         {
             response_type = "code",
-            scope = "openid profile",
+            scope = "openid profile email",
             client_id = Options.ClientId,
             redirect_uri = redirectUri,
             state,
@@ -68,7 +68,8 @@ public class SlackSignIn(
             return null;
         }
 
-        return new SlackIdentity(info.UserId, info.Name ?? info.UserId);
+        var emailVerified = string.Equals(info.EmailVerified, "true", StringComparison.OrdinalIgnoreCase);
+        return new SlackIdentity(info.UserId, info.Name ?? info.UserId, emailVerified ? info.Email : null);
     }
 
     private async Task<string> WorkspaceTeamId() =>

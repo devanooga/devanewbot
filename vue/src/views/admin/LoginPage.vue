@@ -94,7 +94,7 @@ const busy = ref(false);
 const slackAvailable = ref(false);
 
 const slackErrors: Record<string, string> = {
-    unlinked: "That Slack account is not linked to a login. Sign in with your password and link it on the Account page.",
+    unlinked: "No login matches that Slack account's email. Sign in with your password and link Slack on the Account page.",
     rejected: "Slack did not confirm an account in this workspace.",
     "not-admin": "Only Slack workspace admins can sign in with Slack.",
     expired: "The Slack sign-in expired. Try again.",

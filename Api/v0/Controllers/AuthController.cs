@@ -82,6 +82,16 @@ public class AuthController(
         var owner = await UserManager.FindByLoginAsync(SlackSignIn.LoginProvider, identity.UserId);
         if (!linking)
         {
+            if (owner is null && identity.VerifiedEmail is not null)
+            {
+                owner = await UserManager.FindByEmailAsync(identity.VerifiedEmail);
+                if (owner is not null)
+                {
+                    await RemoveSlackLogins(owner);
+                    await UserManager.AddLoginAsync(owner, new UserLoginInfo(SlackSignIn.LoginProvider, identity.UserId, identity.Name));
+                }
+            }
+
             if (owner is null || await UserManager.IsLockedOutAsync(owner))
             {
                 return Redirect("/admin/login?slack=unlinked");
