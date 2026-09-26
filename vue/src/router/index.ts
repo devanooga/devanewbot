@@ -15,6 +15,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: "Moderation log" },
     },
     {
+        path: "/finances",
+        name: "finances",
+        component: () => import("../views/finances/FinancesPage.vue"),
+        meta: { title: "Finances" },
+    },
+    {
         path: "/admin/login",
         name: "admin-login",
         component: () => import("../views/admin/LoginPage.vue"),
@@ -67,6 +73,12 @@ const routes: Array<RouteRecordRaw> = [
                 name: "admin-remove-messages",
                 component: () => import("../views/admin/RemoveMessagesPage.vue"),
                 meta: { title: "Remove messages" },
+            },
+            {
+                path: "finances",
+                name: "admin-finances",
+                component: () => import("../views/admin/FinancesAdminPage.vue"),
+                meta: { title: "Finances" },
             },
             {
                 path: "logs",

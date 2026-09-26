@@ -120,6 +120,7 @@ const pages = computed(() => [
     { to: "/admin/invites", icon: "mdi-email-fast", title: "Invites", badge: 0 },
     { to: "/admin/bans", icon: "mdi-gavel", title: "Channel bans", badge: 0 },
     { to: "/admin/moderation", icon: "mdi-clipboard-text-clock", title: "Moderation log", badge: 0 },
+    { to: "/admin/finances", icon: "mdi-cash-multiple", title: "Finances", badge: 0 },
     { to: "/admin/logs", icon: "mdi-text-box-search", title: "Logs", badge: 0 },
     { to: "/admin/users", icon: "mdi-shield-account", title: "Users", badge: 0 },
 ]);

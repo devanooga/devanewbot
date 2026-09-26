@@ -16,6 +16,9 @@ public class DevanewbotContext(DbContextOptions<DevanewbotContext> options)
     public DbSet<ChannelBan> ChannelBans => Set<ChannelBan>();
     public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<ModerationAction> ModerationActions => Set<ModerationAction>();
+    public DbSet<FinanceTransaction> FinanceTransactions => Set<FinanceTransaction>();
+    public DbSet<FinanceAccount> FinanceAccounts => Set<FinanceAccount>();
+    public DbSet<FinancePayee> FinancePayees => Set<FinancePayee>();
     public DbSet<HamWatch> HamWatches => Set<HamWatch>();
     public DbSet<HamSpot> HamSpots => Set<HamSpot>();
     public DbSet<HamSpotSession> HamSpotSessions => Set<HamSpotSession>();

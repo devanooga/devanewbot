@@ -9,7 +9,6 @@ using devanewbot.Data.Models;
 using devanewbot.Seeders;
 using devanewbot.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,13 +19,13 @@ public class AdminModerationController(
     ModerationLog moderationLog,
     MessageRemoval messageRemoval,
     SlackDirectory slackDirectory,
-    UserManager<User> userManager) : ControllerBase
+    AdminIdentity adminIdentity) : ControllerBase
 {
     protected DevanewbotContext Db { get; } = db;
     protected ModerationLog ModerationLog { get; } = moderationLog;
     protected MessageRemoval MessageRemoval { get; } = messageRemoval;
     protected SlackDirectory SlackDirectory { get; } = slackDirectory;
-    protected UserManager<User> UserManager { get; } = userManager;
+    protected AdminIdentity AdminIdentity { get; } = adminIdentity;
 
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] string? kind = null, [FromQuery] string? search = null)
@@ -59,8 +58,6 @@ public class AdminModerationController(
             return Error("Say what was done.");
         }
 
-        var slackUserId = await LinkedSlackUserId();
-
         await ModerationLog.Record(new ModerationAction
         {
             OccurredAt = model.OccurredAt?.ToUniversalTime() ?? DateTime.UtcNow,
@@ -68,8 +65,8 @@ public class AdminModerationController(
             Source = ModerationActionSource.Admin,
             Action = model.Action.Trim(),
             Reason = model.Reason?.Trim() ?? "",
-            Administrator = await AdministratorName(slackUserId),
-            AdministratorSlackUserId = slackUserId
+            Administrator = await AdminIdentity.Name(User),
+            AdministratorSlackUserId = await AdminIdentity.LinkedSlackUserId(User)
         });
 
         return await List();
@@ -110,7 +107,7 @@ public class AdminModerationController(
         }
 
         action.HiddenAt = DateTime.UtcNow;
-        action.HiddenBy = await AdministratorName(await LinkedSlackUserId());
+        action.HiddenBy = await AdminIdentity.Name(User);
         await Db.SaveChangesAsync();
         return await List();
     }
@@ -162,7 +159,7 @@ public class AdminModerationController(
             return Error("Pick at least one message.");
         }
 
-        var administratorId = await LinkedSlackUserId();
+        var administratorId = await AdminIdentity.LinkedSlackUserId(User);
         if (administratorId is null)
         {
             return Error("Link your Slack account on the Account page first.");
@@ -179,20 +176,6 @@ public class AdminModerationController(
         }
 
         return Ok(await MessageRemoval.Remove(administratorId, model.UserId, model.Messages, model.Reason.Trim(), model.Deactivate));
-    }
-
-    private async Task<string> AdministratorName(string? slackUserId) =>
-        slackUserId is null
-            ? (await UserManager.GetUserAsync(User))?.Email ?? "admin"
-            : await SlackDirectory.Name(slackUserId);
-
-    private async Task<string?> LinkedSlackUserId()
-    {
-        var user = await UserManager.GetUserAsync(User);
-        return user is null
-            ? null
-            : (await UserManager.GetLoginsAsync(user))
-                .FirstOrDefault(login => login.LoginProvider == SlackSignIn.LoginProvider)?.ProviderKey;
     }
 
     private BadRequestObjectResult Error(string message) => BadRequest(new { Errors = new[] { message } });

@@ -9,6 +9,7 @@ using devanewbot.Data.Models;
 using devanewbot.HostedServices;
 using devanewbot.Seeders;
 using devanewbot.Services;
+using devanewbot.Services.Finance;
 using devanewbot.Services.Ham;
 using devanewbot.SlackDotNet.Options;
 using Devanewbot.Discord;
@@ -63,8 +64,11 @@ builder.Services
     .AddScoped<ISeeder, RoleSeeder>()
     .AddScoped<ISeeder, AdminUserSeeder>()
     .AddScoped<ISeeder, ModerationHistorySeeder>()
+    .AddScoped<ISeeder, FinanceAccountSeeder>()
+    .AddScoped<FinanceImport>()
     .AddScoped<ModerationLog>()
     .AddScoped<MessageRemoval>()
+    .AddScoped<AdminIdentity>()
     .AddTransient<IChannelBanService, ChannelBanService>()
     .AddScoped<SlackDirectory>()
     .AddScoped<SlackSignIn>()

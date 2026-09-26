@@ -69,6 +69,63 @@ export interface RemovalResult {
     failures: string[];
 }
 
+export type FinanceKind = "Income" | "Expense" | "Transfer";
+
+export interface FinanceTransaction {
+    id: string;
+    externalKey: string;
+    date: string;
+    account: string;
+    kind: FinanceKind;
+    payee: string | null;
+    description: string | null;
+    category: string;
+    amount: number;
+    hiddenAt: string | null;
+    hiddenBy: string | null;
+}
+
+export interface FinanceAccount {
+    id: string;
+    name: string;
+    openingDate: string;
+    openingBalance: number;
+}
+
+export interface FinancePayee {
+    id: string;
+    name: string;
+    isPublic: boolean;
+}
+
+export interface FinanceData {
+    accounts: FinanceAccount[];
+    payees: FinancePayee[];
+    transactions: FinanceTransaction[];
+}
+
+export interface FinanceImportRow {
+    key: string;
+    status: "New" | "Changed" | "Unchanged";
+    date: string;
+    account: string;
+    kind: FinanceKind;
+    payee: string | null;
+    description: string | null;
+    category: string;
+    amount: number;
+    changes: string[];
+}
+
+export interface FinanceImportPreview {
+    from: string | null;
+    to: string | null;
+    rows: FinanceImportRow[];
+    missing: FinanceTransaction[];
+    skippedAccounts: string[];
+    skippedBeforeOpening: number;
+}
+
 export const ModerationKinds = ["RemovedMessage", "Deactivated", "ChannelBan", "ChannelBanLifted", "Other"];
 
 export interface SlackPerson {
@@ -307,6 +364,28 @@ export const api = {
     hideModeration: (id: string, hidden: boolean) =>
         axios
             .post<ModerationAction[]>(`/api/v0/admin/moderation/${id}/${hidden ? "hide" : "unhide"}`)
+            .then((r) => r.data),
+
+    finances: () => axios.get<FinanceData>("/api/v0/admin/finances").then((r) => r.data),
+    previewFinances: (csv: string) =>
+        axios.post<FinanceImportPreview>("/api/v0/admin/finances/preview", { csv }).then((r) => r.data),
+    applyFinances: (csv: string, applyKeys: string[], hideIds: string[]) =>
+        axios
+            .post<{ added: number; updated: number; hidden: number }>("/api/v0/admin/finances/apply", {
+                csv,
+                applyKeys,
+                hideIds,
+            })
+            .then((r) => r.data),
+    addFinanceAccount: (account: { name: string; openingDate: string; openingBalance: number }) =>
+        axios.post<FinanceData>("/api/v0/admin/finances/accounts", account).then((r) => r.data),
+    updateFinanceAccount: (id: string, account: { openingDate: string; openingBalance: number }) =>
+        axios.put<FinanceData>(`/api/v0/admin/finances/accounts/${id}`, account).then((r) => r.data),
+    setPayeePublic: (id: string, isPublic: boolean) =>
+        axios.put<FinanceData>(`/api/v0/admin/finances/payees/${id}`, { isPublic }).then((r) => r.data),
+    hideFinance: (id: string, hidden: boolean) =>
+        axios
+            .post<FinanceData>(`/api/v0/admin/finances/${id}/${hidden ? "hide" : "unhide"}`)
             .then((r) => r.data),
 
     users: () => axios.get<Account[]>("/api/v0/admin/users").then((r) => r.data),
