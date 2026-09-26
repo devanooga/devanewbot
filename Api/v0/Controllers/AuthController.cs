@@ -35,7 +35,7 @@ public class AuthController(
 
     [HttpGet("slack/start")]
     [AllowAnonymous]
-    public IActionResult StartSlack([FromQuery] string mode = "login")
+    public async Task<IActionResult> StartSlack([FromQuery] string mode = "login")
     {
         if (!SlackSignIn.Configured)
         {
@@ -51,7 +51,7 @@ public class AuthController(
             MaxAge = TimeSpan.FromMinutes(10),
         });
 
-        return Redirect(SlackSignIn.AuthorizeUrl(SlackRedirectUri(), state));
+        return Redirect(await SlackSignIn.AuthorizeUrl(SlackRedirectUri(), state));
     }
 
     [HttpGet("slack/callback")]
