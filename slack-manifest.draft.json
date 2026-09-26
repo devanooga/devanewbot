@@ -93,6 +93,9 @@
         ]
     },
     "oauth_config": {
+        "redirect_urls": [
+            "https://bot.devanooga.com/api/v0/auth/slack/callback"
+        ],
         "scopes": {
             "bot": [
                 "channels:read",
