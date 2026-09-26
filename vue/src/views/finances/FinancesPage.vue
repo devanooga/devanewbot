@@ -1,7 +1,5 @@
 <template>
     <PublicPage title="Finances" :loading="loading" :failed="failed">
-        <template #intro>Every dollar that comes into or goes out of Devanooga, straight from our books.</template>
-
         <section class="card hero">
             <div>
                 <div class="muted label">Cash on hand</div>
@@ -70,6 +68,58 @@
             </section>
         </div>
 
+        <section class="card donations">
+            <h2 class="pad table-title">Donations</h2>
+            <p class="pad rule muted">
+                Donors are named for a one-time gift over $50, more than $600 in a year, or on request, per our
+                <a href="https://www.devanooga.com/code-of-conduct/#privacy-donations">code of conduct</a>.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th class="amount">Gifts</th>
+                        <th class="amount">One-time / monthly</th>
+                        <th class="amount">Given</th>
+                        <th class="amount">In-kind</th>
+                        <th class="amount">Fees</th>
+                        <th class="amount">Received</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="row in donationYears" :key="row.year">
+                        <td>{{ row.year }}</td>
+                        <td class="amount">{{ row.count }}</td>
+                        <td class="amount">{{ row.oneTime }} / {{ row.monthly }}</td>
+                        <td class="amount">{{ money(row.given) }}</td>
+                        <td class="amount">{{ money(row.inKind) }}</td>
+                        <td class="amount">{{ money(row.fees) }}</td>
+                        <td class="amount">{{ money(row.received) }}</td>
+                    </tr>
+                    <tr v-if="donationYears.length === 0">
+                        <td colspan="7" class="muted">No donations in this period.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <template v-if="namedDonations.length">
+                <h3 class="pad named-title">Named donors</h3>
+                <table class="named">
+                    <tbody>
+                        <tr v-for="donation in namedDonations" :key="donation.id">
+                            <td class="date">{{ donation.date }}</td>
+                            <td>
+                                <div>{{ donation.donor }}</div>
+                                <div class="muted small">
+                                    {{ [donation.inKind ? "In-kind" : "", donation.note, donation.namedBecause].filter(Boolean).join(" · ") }}
+                                </div>
+                            </td>
+                            <td class="amount">{{ money(donation.amount) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </template>
+        </section>
+
         <section class="card">
             <h2 class="pad table-title">Transactions</h2>
             <table>
@@ -122,6 +172,20 @@ interface Account {
     asOf: string | null;
 }
 
+interface Donation {
+    id: string;
+    date: string;
+    donor: string;
+    namedBecause: string | null;
+    amount: number;
+    fee: number;
+    net: number;
+    recurring: boolean;
+    inKind: boolean;
+    source: string;
+    note: string | null;
+}
+
 interface Transaction {
     id: string;
     date: string;
@@ -135,6 +199,7 @@ interface Transaction {
 
 const accounts = ref<Account[]>([]);
 const transactions = ref<Transaction[]>([]);
+const donations = ref<Donation[]>([]);
 const year = ref<string | null>(null);
 const loading = ref(true);
 const failed = ref(false);
@@ -201,6 +266,31 @@ const period = computed(() => {
     };
 });
 
+const periodDonations = computed(() =>
+    year.value === null ? donations.value : donations.value.filter((d) => d.date.startsWith(year.value as string)),
+);
+
+const donationYears = computed(() => {
+    const byYear = new Map<string, Donation[]>();
+    for (const d of periodDonations.value) {
+        byYear.set(d.date.slice(0, 4), [...(byYear.get(d.date.slice(0, 4)) ?? []), d]);
+    }
+    return [...byYear.entries()]
+        .sort(([a], [b]) => b.localeCompare(a))
+        .map(([label, list]) => ({
+            year: label,
+            count: list.length,
+            oneTime: list.filter((d) => !d.recurring).length,
+            monthly: list.filter((d) => d.recurring).length,
+            given: list.filter((d) => !d.inKind).reduce((sum, d) => sum + d.amount, 0),
+            inKind: list.filter((d) => d.inKind).reduce((sum, d) => sum + d.amount, 0),
+            fees: list.reduce((sum, d) => sum + d.fee, 0),
+            received: list.reduce((sum, d) => sum + d.net, 0),
+        }));
+});
+
+const namedDonations = computed(() => periodDonations.value.filter((d) => d.namedBecause));
+
 const sources = computed(() =>
     rollUp(
         periodTransactions.value.filter((t) => t.kind === "Income"),
@@ -238,9 +328,12 @@ function longDate(value: string): string {
 
 onMounted(async () => {
     try {
-        const data = (await axios.get<{ accounts: Account[]; transactions: Transaction[] }>("/api/v0/finances")).data;
+        const data = (
+            await axios.get<{ accounts: Account[]; transactions: Transaction[]; donations: Donation[] }>("/api/v0/finances")
+        ).data;
         accounts.value = data.accounts;
         transactions.value = data.transactions;
+        donations.value = data.donations;
     } catch {
         failed.value = true;
     } finally {
@@ -263,6 +356,29 @@ h2 {
 .table-title {
     margin: 0;
     padding-bottom: 0;
+}
+
+.donations {
+    margin-bottom: 16px;
+}
+
+.rule {
+    margin: 0;
+    padding-top: 4px;
+    font-size: 13px;
+}
+
+.named .date {
+    width: 1%;
+    padding-right: 24px;
+}
+
+.named-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    padding-bottom: 0;
+    border-top: 1px solid var(--border);
 }
 
 .hero {

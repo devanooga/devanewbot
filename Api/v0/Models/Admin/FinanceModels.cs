@@ -17,6 +17,11 @@ public class FinanceAccountModel
     public decimal OpeningBalance { get; set; }
 }
 
+public class DonationNamedModel
+{
+    public bool NamedOnRequest { get; set; }
+}
+
 public class FinancePayeeModel
 {
     public bool IsPublic { get; set; }

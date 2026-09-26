@@ -19,6 +19,7 @@ public class DevanewbotContext(DbContextOptions<DevanewbotContext> options)
     public DbSet<FinanceTransaction> FinanceTransactions => Set<FinanceTransaction>();
     public DbSet<FinanceAccount> FinanceAccounts => Set<FinanceAccount>();
     public DbSet<FinancePayee> FinancePayees => Set<FinancePayee>();
+    public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<HamWatch> HamWatches => Set<HamWatch>();
     public DbSet<HamSpot> HamSpots => Set<HamSpot>();
     public DbSet<HamSpotSession> HamSpotSessions => Set<HamSpotSession>();

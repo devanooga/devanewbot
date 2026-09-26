@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 
 public record QuickBooksRow(string Account, string Type, DateOnly Date, string Number, string Name, string Memo, string Split, decimal Amount);
 
@@ -16,7 +15,7 @@ public static class QuickBooksCsv
 
     public static List<QuickBooksRow> Parse(string csv)
     {
-        var lines = Records(csv).ToList();
+        var lines = Csv.Records(csv).ToList();
         var headerIndex = lines.FindIndex(cells =>
             cells.Any(cell => Is(cell, "Type")) && cells.Any(cell => Is(cell, "Date")) && cells.Any(cell => Is(cell, "Amount")));
         if (headerIndex < 0)
@@ -83,61 +82,4 @@ public static class QuickBooksCsv
     }
 
     private static bool Is(string cell, string name) => cell.Trim().Equals(name, StringComparison.OrdinalIgnoreCase);
-
-    private static IEnumerable<string[]> Records(string csv)
-    {
-        var cells = new List<string>();
-        var cell = new StringBuilder();
-        var quoted = false;
-        for (var i = 0; i < csv.Length; i++)
-        {
-            var c = csv[i];
-            if (quoted)
-            {
-                if (c == '"' && i + 1 < csv.Length && csv[i + 1] == '"')
-                {
-                    cell.Append('"');
-                    i++;
-                }
-                else if (c == '"')
-                {
-                    quoted = false;
-                }
-                else
-                {
-                    cell.Append(c);
-                }
-            }
-            else if (c == '"')
-            {
-                quoted = true;
-            }
-            else if (c == ',')
-            {
-                cells.Add(cell.ToString());
-                cell.Clear();
-            }
-            else if (c == '\n' || c == '\r')
-            {
-                if (c == '\r' && i + 1 < csv.Length && csv[i + 1] == '\n')
-                {
-                    i++;
-                }
-                cells.Add(cell.ToString());
-                cell.Clear();
-                yield return cells.ToArray();
-                cells.Clear();
-            }
-            else
-            {
-                cell.Append(c);
-            }
-        }
-
-        if (cell.Length > 0 || cells.Count > 0)
-        {
-            cells.Add(cell.ToString());
-            yield return cells.ToArray();
-        }
-    }
 }

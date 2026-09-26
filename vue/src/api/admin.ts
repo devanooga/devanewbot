@@ -98,10 +98,51 @@ export interface FinancePayee {
     isPublic: boolean;
 }
 
+export interface AdminDonation {
+    id: string;
+    externalId: string;
+    donatedAt: string;
+    donor: string;
+    amount: number;
+    fee: number;
+    net: number;
+    recurring: boolean;
+    inKind: boolean;
+    source: string;
+    note: string | null;
+    anonymousRequested: boolean;
+    namedOnRequest: boolean;
+    hiddenAt: string | null;
+    hiddenBy: string | null;
+    namedBecause: string | null;
+}
+
 export interface FinanceData {
     accounts: FinanceAccount[];
     payees: FinancePayee[];
     transactions: FinanceTransaction[];
+    donations: AdminDonation[];
+}
+
+export interface DonationImportPreview {
+    from: string | null;
+    to: string | null;
+    rows: {
+        key: string;
+        status: "New" | "Changed" | "Unchanged";
+        donatedAt: string;
+        donor: string;
+        amount: number;
+        fee: number;
+        net: number;
+        recurring: boolean;
+        inKind: boolean;
+        source: string;
+        namedOnRequest: boolean | null;
+        note: string | null;
+        changes: string[];
+    }[];
+    missing: AdminDonation[];
 }
 
 export interface FinanceImportRow {
@@ -383,6 +424,22 @@ export const api = {
         axios.put<FinanceData>(`/api/v0/admin/finances/accounts/${id}`, account).then((r) => r.data),
     setPayeePublic: (id: string, isPublic: boolean) =>
         axios.put<FinanceData>(`/api/v0/admin/finances/payees/${id}`, { isPublic }).then((r) => r.data),
+    previewDonations: (csv: string) =>
+        axios.post<DonationImportPreview>("/api/v0/admin/finances/donations/preview", { csv }).then((r) => r.data),
+    applyDonations: (csv: string, applyKeys: string[], hideIds: string[]) =>
+        axios
+            .post<{ added: number; updated: number; hidden: number }>("/api/v0/admin/finances/donations/apply", {
+                csv,
+                applyKeys,
+                hideIds,
+            })
+            .then((r) => r.data),
+    setDonationNamed: (id: string, namedOnRequest: boolean) =>
+        axios.put<FinanceData>(`/api/v0/admin/finances/donations/${id}/named`, { namedOnRequest }).then((r) => r.data),
+    hideDonation: (id: string, hidden: boolean) =>
+        axios
+            .post<FinanceData>(`/api/v0/admin/finances/donations/${id}/${hidden ? "hide" : "unhide"}`)
+            .then((r) => r.data),
     hideFinance: (id: string, hidden: boolean) =>
         axios
             .post<FinanceData>(`/api/v0/admin/finances/${id}/${hidden ? "hide" : "unhide"}`)

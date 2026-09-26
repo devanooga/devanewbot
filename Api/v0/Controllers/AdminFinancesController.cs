@@ -1,7 +1,9 @@
 namespace devanewbot.Api.v0.Controllers;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using devanewbot.Api.v0.Models.Admin;
 using devanewbot.Data;
@@ -15,15 +17,24 @@ using Microsoft.EntityFrameworkCore;
 
 [Route("/api/v0/admin/finances")]
 [Authorize(Roles = RoleSeeder.Administrators)]
-public class AdminFinancesController(DevanewbotContext db, FinanceImport financeImport, AdminIdentity adminIdentity) : ControllerBase
+public class AdminFinancesController(
+    DevanewbotContext db,
+    FinanceImport financeImport,
+    DonationImport donationImport,
+    AdminIdentity adminIdentity) : ControllerBase
 {
     protected DevanewbotContext Db { get; } = db;
     protected FinanceImport FinanceImport { get; } = financeImport;
+    protected DonationImport DonationImport { get; } = donationImport;
     protected AdminIdentity AdminIdentity { get; } = adminIdentity;
 
     [HttpGet]
-    public async Task<IActionResult> List() =>
-        Ok(new
+    public async Task<IActionResult> List()
+    {
+        var donations = await Db.Donations.AsNoTracking().OrderByDescending(donation => donation.DonatedAt).ToListAsync();
+        var reasons = DonationDisclosure.Reasons(donations.Where(donation => donation.HiddenAt == null).ToList());
+
+        return Ok(new
         {
             Accounts = await Db.FinanceAccounts.AsNoTracking().OrderBy(account => account.Name).ToListAsync(),
             Payees = await Db.FinancePayees.AsNoTracking().OrderBy(payee => payee.Name).ToListAsync(),
@@ -31,8 +42,28 @@ public class AdminFinancesController(DevanewbotContext db, FinanceImport finance
                 .AsNoTracking()
                 .OrderByDescending(transaction => transaction.Date)
                 .ThenBy(transaction => transaction.Account)
-                .ToListAsync()
+                .ToListAsync(),
+            Donations = donations.Select(donation => new
+            {
+                donation.Id,
+                donation.ExternalId,
+                donation.DonatedAt,
+                donation.Donor,
+                donation.Amount,
+                donation.Fee,
+                donation.Net,
+                donation.Recurring,
+                donation.InKind,
+                donation.Source,
+                donation.Note,
+                donation.AnonymousRequested,
+                donation.NamedOnRequest,
+                donation.HiddenAt,
+                donation.HiddenBy,
+                NamedBecause = reasons.GetValueOrDefault(donation)
+            })
         });
+    }
 
     [HttpPost("preview")]
     public async Task<IActionResult> Preview([FromBody] FinanceImportModel model)
@@ -74,6 +105,91 @@ public class AdminFinancesController(DevanewbotContext db, FinanceImport finance
             return Error(e.Message);
         }
     }
+
+    [HttpPost("donations/preview")]
+    public async Task<IActionResult> PreviewDonations([FromBody] FinanceImportModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Csv))
+        {
+            return Error("Pick a Donorbox CSV export.");
+        }
+
+        try
+        {
+            return Ok(await DonationImport.Preview(model.Csv));
+        }
+        catch (FormatException e)
+        {
+            return Error(e.Message);
+        }
+    }
+
+    [HttpPost("donations/apply")]
+    public async Task<IActionResult> ApplyDonations([FromBody] FinanceImportModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Csv))
+        {
+            return Error("Pick a Donorbox CSV export.");
+        }
+
+        try
+        {
+            var (added, updated, hidden) = await DonationImport.Apply(
+                model.Csv,
+                model.ApplyKeys.ToHashSet(),
+                model.HideIds.ToHashSet(),
+                await AdminIdentity.Name(User));
+            return Ok(new { Added = added, Updated = updated, Hidden = hidden });
+        }
+        catch (FormatException e)
+        {
+            return Error(e.Message);
+        }
+    }
+
+    [HttpGet("donations/direct.csv")]
+    public async Task<IActionResult> DirectDonations()
+    {
+        var direct = await Db.Donations
+            .AsNoTracking()
+            .Where(donation => donation.Source == "Direct" || donation.Source == "In-kind")
+            .OrderBy(donation => donation.DonatedAt)
+            .ToListAsync();
+        var csv = DonationCsv.WriteDirect(direct.Select(donation => new DonationRow(
+            donation.ExternalId,
+            donation.DonatedAt,
+            donation.Donor,
+            donation.Amount,
+            donation.Fee,
+            donation.Net,
+            donation.Recurring,
+            donation.InKind,
+            donation.Source,
+            donation.AnonymousRequested,
+            donation.NamedOnRequest,
+            donation.Note)));
+        return File(Encoding.UTF8.GetBytes(csv), "text/csv", "devanooga-direct-donations.csv");
+    }
+
+    [HttpPut("donations/{id}/named")]
+    public async Task<IActionResult> SetNamedOnRequest([FromRoute] Guid id, [FromBody] DonationNamedModel model)
+    {
+        var donation = await Db.Donations.FindAsync(id);
+        if (donation is null)
+        {
+            return NotFound();
+        }
+
+        donation.NamedOnRequest = model.NamedOnRequest;
+        await Db.SaveChangesAsync();
+        return await List();
+    }
+
+    [HttpPost("donations/{id}/hide")]
+    public async Task<IActionResult> HideDonation([FromRoute] Guid id) => await SetDonationHidden(id, true);
+
+    [HttpPost("donations/{id}/unhide")]
+    public async Task<IActionResult> UnhideDonation([FromRoute] Guid id) => await SetDonationHidden(id, false);
 
     [HttpPost("accounts")]
     public async Task<IActionResult> AddAccount([FromBody] FinanceAccountModel model)
@@ -144,6 +260,20 @@ public class AdminFinancesController(DevanewbotContext db, FinanceImport finance
 
         transaction.HiddenAt = hidden ? DateTime.UtcNow : null;
         transaction.HiddenBy = hidden ? await AdminIdentity.Name(User) : null;
+        await Db.SaveChangesAsync();
+        return await List();
+    }
+
+    private async Task<IActionResult> SetDonationHidden(Guid id, bool hidden)
+    {
+        var donation = await Db.Donations.FindAsync(id);
+        if (donation is null)
+        {
+            return NotFound();
+        }
+
+        donation.HiddenAt = hidden ? DateTime.UtcNow : null;
+        donation.HiddenBy = hidden ? await AdminIdentity.Name(User) : null;
         await Db.SaveChangesAsync();
         return await List();
     }

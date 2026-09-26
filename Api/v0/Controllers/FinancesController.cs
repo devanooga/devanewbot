@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using devanewbot.Data;
 using devanewbot.Data.Models;
+using devanewbot.Services.Finance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,12 @@ public class FinancesController(DevanewbotContext db) : ControllerBase
             .OrderByDescending(transaction => transaction.Date)
             .ThenBy(transaction => transaction.Account)
             .ToListAsync();
+        var donations = await db.Donations
+            .AsNoTracking()
+            .Where(donation => donation.HiddenAt == null)
+            .OrderByDescending(donation => donation.DonatedAt)
+            .ToListAsync();
+        var named = DonationDisclosure.Reasons(donations);
 
         return Ok(new
         {
@@ -49,6 +56,20 @@ public class FinancesController(DevanewbotContext db) : ControllerBase
                 transaction.Description,
                 transaction.Category,
                 transaction.Amount
+            }),
+            Donations = donations.Select(donation => new
+            {
+                donation.Id,
+                Date = DateOnly.FromDateTime(donation.DonatedAt),
+                Donor = named[donation] is null ? AnonymousDonor : donation.Donor,
+                NamedBecause = named[donation],
+                donation.Amount,
+                donation.Fee,
+                donation.Net,
+                donation.Recurring,
+                donation.InKind,
+                donation.Source,
+                donation.Note
             })
         });
     }

@@ -66,6 +66,7 @@ builder.Services
     .AddScoped<ISeeder, ModerationHistorySeeder>()
     .AddScoped<ISeeder, FinanceAccountSeeder>()
     .AddScoped<FinanceImport>()
+    .AddScoped<DonationImport>()
     .AddScoped<ModerationLog>()
     .AddScoped<MessageRemoval>()
     .AddScoped<AdminIdentity>()

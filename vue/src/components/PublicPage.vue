@@ -3,7 +3,7 @@
         <div class="public-content">
             <header>
                 <h1>{{ title }}</h1>
-                <p><slot name="intro" /></p>
+                <p v-if="$slots.intro"><slot name="intro" /></p>
             </header>
 
             <p v-if="failed" class="status">Could not load this page. Try again in a moment.</p>

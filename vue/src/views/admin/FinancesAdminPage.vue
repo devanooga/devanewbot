@@ -1,8 +1,9 @@
 <template>
     <v-card border>
         <v-tabs v-model="tab" color="primary">
-            <v-tab value="import" prepend-icon="mdi-file-upload">Import</v-tab>
+            <v-tab value="import" prepend-icon="mdi-file-upload">QuickBooks import</v-tab>
             <v-tab value="ledger" prepend-icon="mdi-format-list-bulleted">Transactions</v-tab>
+            <v-tab value="donations" prepend-icon="mdi-hand-heart">Donations</v-tab>
             <v-tab value="setup" prepend-icon="mdi-bank">Accounts &amp; donors</v-tab>
             <v-spacer />
             <v-btn variant="text" class="align-self-center mr-2" href="/finances" target="_blank" append-icon="mdi-open-in-new">
@@ -16,104 +17,27 @@
                 <v-card-text>
                     <p class="text-medium-emphasis mb-4">
                         In QuickBooks, run <strong>Reports → Accountant &amp; Taxes → Transaction Detail by Account</strong>
-                        for any date range, export it as a CSV file and pick it here. Only
-                        {{ data.accounts.map((a) => a.name).join(" and ") || "tracked accounts" }} are read; nothing
-                        changes until you apply.
+                        for any date range and export it as CSV. Only
+                        {{ data.accounts.map((a) => a.name).join(" and ") || "tracked accounts" }} are read.
                     </p>
-                    <div class="d-flex ga-3 align-center flex-wrap">
-                        <v-btn color="primary" prepend-icon="mdi-file-delimited" :loading="previewing" @click="picker?.click()">
-                            Choose CSV
-                        </v-btn>
-                        <span v-if="fileName" class="text-medium-emphasis">{{ fileName }}</span>
-                        <input ref="picker" type="file" accept=".csv,text/csv" hidden @change="pickFile" />
-                    </div>
+                    <v-btn color="primary" prepend-icon="mdi-file-delimited" :loading="ledgerImport.loading" @click="ledgerPicker?.click()">
+                        Choose CSV
+                    </v-btn>
+                    <span v-if="ledgerImport.fileName" class="ml-3 text-medium-emphasis">{{ ledgerImport.fileName }}</span>
+                    <input ref="ledgerPicker" type="file" accept=".csv,text/csv" hidden @change="previewLedger" />
                 </v-card-text>
-
-                <template v-if="preview">
-                    <v-card-text class="pt-0">
-                        <div class="d-flex ga-2 flex-wrap mb-2">
-                            <v-chip color="success" variant="tonal">{{ count("New") }} new</v-chip>
-                            <v-chip color="warning" variant="tonal">{{ count("Changed") }} changed</v-chip>
-                            <v-chip variant="tonal">{{ count("Unchanged") }} already up to date</v-chip>
-                            <v-chip v-if="preview.missing.length" color="error" variant="tonal">
-                                {{ preview.missing.length }} no longer in QuickBooks
-                            </v-chip>
-                        </div>
-                        <div class="text-caption text-medium-emphasis">
-                            <span v-if="preview.from">Covers {{ preview.from }} to {{ preview.to }}.</span>
-                            <span v-if="preview.skippedBeforeOpening">
-                                {{ preview.skippedBeforeOpening }} lines before the opening date skipped.
-                            </span>
-                            <span v-if="preview.skippedAccounts.length">
-                                Not tracked: {{ preview.skippedAccounts.join(", ") }}.
-                            </span>
-                        </div>
-                    </v-card-text>
-
-                    <v-data-table
-                        v-if="pending.length"
-                        v-model="selectedKeys"
-                        :headers="previewHeaders"
-                        :items="pending"
-                        item-value="key"
-                        show-select
-                        :items-per-page="50"
-                        density="compact"
-                    >
-                        <template #[`item.status`]="{ item }">
-                            <v-chip size="small" variant="tonal" :color="item.status === 'New' ? 'success' : 'warning'">
-                                {{ item.status }}
-                            </v-chip>
-                            <div v-if="item.changes.length" class="text-caption text-medium-emphasis">
-                                {{ item.changes.join(", ") }}
-                            </div>
-                        </template>
-                        <template #[`item.payee`]="{ item }">
-                            <div>{{ item.payee ?? item.description }}</div>
-                            <div v-if="item.payee && item.description" class="text-caption text-medium-emphasis">
-                                {{ item.description }}
-                            </div>
-                        </template>
-                        <template #[`item.category`]="{ item }">
-                            <div>{{ item.category }}</div>
-                            <div class="text-caption text-medium-emphasis">{{ item.account }}</div>
-                        </template>
-                        <template #[`item.amount`]="{ item }">{{ money(item.amount) }}</template>
-                    </v-data-table>
-
-                    <template v-if="preview.missing.length">
-                        <v-card-text>
-                            <div class="text-body-2 mb-1">In the ledger but not in this export</div>
-                            <div class="text-caption text-medium-emphasis mb-2">
-                                Probably deleted or changed in QuickBooks. Ticked ones get hidden from the public page.
-                            </div>
-                            <v-checkbox
-                                v-for="missing in preview.missing"
-                                :key="missing.id"
-                                v-model="hideIds"
-                                :value="missing.id"
-                                density="compact"
-                                hide-details
-                                :label="`${missing.date} · ${missing.payee ?? missing.description} · ${money(missing.amount)} · ${missing.account}`"
-                            />
-                        </v-card-text>
-                    </template>
-
-                    <v-card-actions>
-                        <v-spacer />
-                        <v-btn variant="text" @click="reset">Discard</v-btn>
-                        <v-btn
-                            color="primary"
-                            variant="flat"
-                            :loading="applying"
-                            :disabled="selectedKeys.length === 0 && hideIds.length === 0"
-                            @click="apply"
-                        >
-                            Apply {{ selectedKeys.length }} {{ selectedKeys.length === 1 ? "change" : "changes" }}
-                            <template v-if="hideIds.length">and hide {{ hideIds.length }}</template>
-                        </v-btn>
-                    </v-card-actions>
-                </template>
+                <ImportDiff
+                    v-if="ledgerPreview"
+                    v-model:selected="ledgerImport.selected"
+                    v-model:hidden="ledgerImport.hidden"
+                    :rows="ledgerRows"
+                    :missing="ledgerMissing"
+                    source="QuickBooks"
+                    :note="ledgerNote"
+                    :applying="ledgerImport.applying"
+                    @apply="applyLedger"
+                    @discard="resetLedger"
+                />
             </v-window-item>
 
             <v-window-item value="ledger">
@@ -133,12 +57,8 @@
                 >
                     <template #[`item.payee`]="{ item }">
                         <div>{{ item.payee ?? item.description }}</div>
-                        <div v-if="item.payee && item.description" class="text-caption text-medium-emphasis">
-                            {{ item.description }}
-                        </div>
-                        <div v-if="item.hiddenAt" class="text-caption text-warning">
-                            Hidden by {{ item.hiddenBy }} on {{ when(item.hiddenAt) }}
-                        </div>
+                        <div v-if="item.payee && item.description" class="text-caption text-medium-emphasis">{{ item.description }}</div>
+                        <div v-if="item.hiddenAt" class="text-caption text-warning">Hidden by {{ item.hiddenBy }} on {{ when(item.hiddenAt) }}</div>
                     </template>
                     <template #[`item.category`]="{ item }">
                         <div>{{ item.category }}</div>
@@ -163,12 +83,91 @@
                 </v-data-table>
             </v-window-item>
 
+            <v-window-item value="donations">
+                <v-card-text>
+                    <p class="text-medium-emphasis mb-4">
+                        Upload a Donorbox donations export, or the direct-donations file for gifts that didn't go through
+                        Donorbox (Id, Date, Donor, Amount, Type as Direct or In-kind, Public, Note). Emails, addresses and
+                        card details are never stored. The public page names donors for a one-time gift over $50, more
+                        than $600 in a year, or when Public is yes.
+                    </p>
+                    <v-btn color="primary" prepend-icon="mdi-file-delimited" :loading="donationImport.loading" @click="donationPicker?.click()">
+                        Choose CSV
+                    </v-btn>
+                    <v-btn variant="text" class="ml-2" prepend-icon="mdi-download" href="/api/v0/admin/finances/donations/direct.csv">
+                        Direct-donations file
+                    </v-btn>
+                    <span v-if="donationImport.fileName" class="ml-3 text-medium-emphasis">{{ donationImport.fileName }}</span>
+                    <input ref="donationPicker" type="file" accept=".csv,text/csv" hidden @change="previewDonations" />
+                </v-card-text>
+                <ImportDiff
+                    v-if="donationPreview"
+                    v-model:selected="donationImport.selected"
+                    v-model:hidden="donationImport.hidden"
+                    :rows="donationRows"
+                    :missing="donationMissing"
+                    source="Donorbox"
+                    :applying="donationImport.applying"
+                    @apply="applyDonations"
+                    @discard="resetDonations"
+                />
+                <v-divider />
+                <v-data-table
+                    :headers="donationHeaders"
+                    :items="data.donations"
+                    :loading="loading"
+                    :row-props="rowProps"
+                    item-value="id"
+                    :items-per-page="50"
+                >
+                    <template #[`item.donatedAt`]="{ item }">{{ item.donatedAt.slice(0, 10) }}</template>
+                    <template #[`item.donor`]="{ item }">
+                        <div>{{ item.donor }}</div>
+                        <div class="text-caption text-medium-emphasis">
+                            {{ item.inKind ? "In-kind" : item.recurring ? "Monthly" : "One-time" }} · {{ item.source }}
+                            <span v-if="item.note"> · {{ item.note }}</span>
+                            <span v-if="item.anonymousRequested"> · asked to be anonymous</span>
+                        </div>
+                    </template>
+                    <template #[`item.namedBecause`]="{ item }">
+                        <v-chip v-if="item.namedBecause" size="small" color="primary" variant="tonal">{{ item.namedBecause }}</v-chip>
+                        <span v-else class="text-medium-emphasis">Individual donor</span>
+                    </template>
+                    <template #[`item.amount`]="{ item }">
+                        <div class="text-no-wrap">{{ money(item.amount) }}</div>
+                        <div v-if="item.fee" class="text-caption text-medium-emphasis text-no-wrap">{{ money(item.fee) }} fee</div>
+                    </template>
+                    <template #[`item.actions`]="{ item }">
+                        <div class="d-flex ga-1 justify-end align-center">
+                            <v-switch
+                                :model-value="item.namedOnRequest"
+                                color="primary"
+                                density="compact"
+                                hide-details
+                                aria-label="Named at the donor's request"
+                                v-tooltip="'Named at the donor\'s request'"
+                                @update:model-value="setNamed(item, Boolean($event))"
+                            />
+                            <v-btn
+                                size="small"
+                                variant="text"
+                                :icon="item.hiddenAt ? 'mdi-eye' : 'mdi-eye-off'"
+                                :aria-label="item.hiddenAt ? 'Unhide' : 'Hide'"
+                                @click="setDonationHidden(item, !item.hiddenAt)"
+                            />
+                        </div>
+                    </template>
+                    <template #no-data>
+                        <div class="py-8 text-center text-medium-emphasis">No donations imported yet.</div>
+                    </template>
+                </v-data-table>
+            </v-window-item>
+
             <v-window-item value="setup">
                 <v-card-text>
                     <div class="text-body-1 mb-1">Tracked accounts</div>
                     <div class="text-caption text-medium-emphasis mb-3">
-                        Names must match QuickBooks exactly. The public ledger starts at each opening date, from the
-                        opening balance.
+                        Names must match QuickBooks. The public ledger starts at each opening date, from the opening balance.
                     </div>
                     <v-table density="comfortable">
                         <thead>
@@ -196,9 +195,9 @@
                 <v-divider />
 
                 <v-card-text>
-                    <div class="text-body-1 mb-1">Donor names</div>
+                    <div class="text-body-1 mb-1">Names on deposits</div>
                     <div class="text-caption text-medium-emphasis mb-3">
-                        Money in from anyone not switched on here shows publicly as "Individual donor".
+                        QuickBooks deposit names not switched on here show publicly as "Individual donor".
                     </div>
                     <v-switch
                         v-for="payee in data.payees"
@@ -237,7 +236,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import {
+    AdminDonation,
     api,
+    DonationImportPreview,
     errorMessage,
     FinanceAccount,
     FinanceData,
@@ -248,16 +249,9 @@ import {
 import { useNotice } from "@/composables/useNotice";
 import { when } from "@/composables/useFormat";
 import { money } from "@/components/charts/scale";
+import ImportDiff, { DiffRow } from "@/components/ImportDiff.vue";
 
 const { notify } = useNotice();
-
-const previewHeaders = [
-    { title: "Status", key: "status" },
-    { title: "Date", key: "date", nowrap: true },
-    { title: "Description", key: "payee", minWidth: "220px" },
-    { title: "Category", key: "category" },
-    { title: "Amount", key: "amount", align: "end" as const, nowrap: true },
-];
 
 const ledgerHeaders = [
     { title: "Date", key: "date", nowrap: true },
@@ -267,33 +261,99 @@ const ledgerHeaders = [
     { title: "", key: "actions", sortable: false, align: "end" as const },
 ];
 
+const donationHeaders = [
+    { title: "Date", key: "donatedAt", nowrap: true },
+    { title: "Donor", key: "donor", minWidth: "200px" },
+    { title: "Public as", key: "namedBecause", sortable: false },
+    { title: "Amount", key: "amount", align: "end" as const },
+    { title: "", key: "actions", sortable: false, align: "end" as const },
+];
+
 const tab = ref("import");
-const data = ref<FinanceData>({ accounts: [], payees: [], transactions: [] });
+const data = ref<FinanceData>({ accounts: [], payees: [], transactions: [], donations: [] });
 const loading = ref(false);
 const busy = ref(false);
 const search = ref("");
 const showHidden = ref(false);
-const picker = ref<HTMLInputElement | null>(null);
-const fileName = ref("");
-const csv = ref("");
-const preview = ref<FinanceImportPreview | null>(null);
-const previewing = ref(false);
-const applying = ref(false);
-const selectedKeys = ref<string[]>([]);
-const hideIds = ref<string[]>([]);
+const ledgerPicker = ref<HTMLInputElement | null>(null);
+const donationPicker = ref<HTMLInputElement | null>(null);
+const ledgerPreview = ref<FinanceImportPreview | null>(null);
+const donationPreview = ref<DonationImportPreview | null>(null);
+const ledgerImport = reactive(emptyImport());
+const donationImport = reactive(emptyImport());
 const accountDialog = ref(false);
 const accountForm = reactive({ id: "", name: "", openingDate: "", openingBalance: 0 });
 
-const pending = computed(() => preview.value?.rows.filter((row) => row.status !== "Unchanged") ?? []);
 const ledger = computed(() =>
     showHidden.value ? data.value.transactions : data.value.transactions.filter((t) => !t.hiddenAt),
 );
 
-function count(status: string): number {
-    return preview.value?.rows.filter((row) => row.status === status).length ?? 0;
+const ledgerRows = computed<DiffRow[]>(
+    () =>
+        ledgerPreview.value?.rows.map((row) => ({
+            key: row.key,
+            status: row.status,
+            changes: row.changes,
+            date: row.date,
+            title: row.payee ?? row.description ?? row.category,
+            subtitle: `${row.category} · ${row.account}`,
+            amount: row.amount,
+        })) ?? [],
+);
+const ledgerMissing = computed(
+    () =>
+        ledgerPreview.value?.missing.map((t) => ({
+            id: t.id,
+            label: `${t.date} · ${t.payee ?? t.description} · ${money(t.amount)} · ${t.account}`,
+        })) ?? [],
+);
+const ledgerNote = computed(() => {
+    const preview = ledgerPreview.value;
+    if (!preview) {
+        return "";
+    }
+    return [
+        preview.from ? `Covers ${preview.from} to ${preview.to}.` : "",
+        preview.skippedBeforeOpening ? `${preview.skippedBeforeOpening} lines before the opening date skipped.` : "",
+        preview.skippedAccounts.length ? `Not tracked: ${preview.skippedAccounts.join(", ")}.` : "",
+    ]
+        .filter(Boolean)
+        .join(" ");
+});
+
+const donationRows = computed<DiffRow[]>(
+    () =>
+        donationPreview.value?.rows.map((row) => ({
+            key: row.key,
+            status: row.status,
+            changes: row.changes,
+            date: row.donatedAt.slice(0, 10),
+            title: row.donor,
+            subtitle: [
+                row.inKind ? "In-kind" : row.recurring ? "Monthly" : "One-time",
+                row.source,
+                row.fee ? `${money(row.fee)} fee` : "",
+                row.namedOnRequest ? "public" : "",
+                row.note ?? "",
+            ]
+                .filter(Boolean)
+                .join(" · "),
+            amount: row.amount,
+        })) ?? [],
+);
+const donationMissing = computed(
+    () =>
+        donationPreview.value?.missing.map((d) => ({
+            id: d.id,
+            label: `${d.donatedAt.slice(0, 10)} · ${d.donor} · ${money(d.amount)}`,
+        })) ?? [],
+);
+
+function emptyImport() {
+    return { csv: "", fileName: "", loading: false, applying: false, selected: [] as string[], hidden: [] as string[] };
 }
 
-function rowProps({ item }: { item: FinanceTransaction }) {
+function rowProps({ item }: { item: { hiddenAt: string | null } }) {
     return item.hiddenAt ? { class: "hidden-entry" } : {};
 }
 
@@ -308,55 +368,109 @@ async function load() {
     }
 }
 
-async function pickFile(event: Event) {
+async function readFile(event: Event, state: ReturnType<typeof emptyImport>): Promise<boolean> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = "";
     if (!file) {
+        return false;
+    }
+    state.csv = await file.text();
+    state.fileName = file.name;
+    return true;
+}
+
+async function previewLedger(event: Event) {
+    if (!(await readFile(event, ledgerImport))) {
         return;
     }
-
-    previewing.value = true;
+    ledgerImport.loading = true;
     try {
-        csv.value = await file.text();
-        fileName.value = file.name;
-        preview.value = await api.previewFinances(csv.value);
-        selectedKeys.value = pending.value.map((row) => row.key);
-        hideIds.value = [];
+        ledgerPreview.value = await api.previewFinances(ledgerImport.csv);
+        ledgerImport.selected = ledgerRows.value.filter((row) => row.status !== "Unchanged").map((row) => row.key);
+        ledgerImport.hidden = [];
     } catch (failure) {
-        notify(errorMessage(failure, `Could not read ${file.name}.`), "error");
-        reset();
+        notify(errorMessage(failure, `Could not read ${ledgerImport.fileName}.`), "error");
+        resetLedger();
     } finally {
-        previewing.value = false;
+        ledgerImport.loading = false;
     }
 }
 
-function reset() {
-    preview.value = null;
-    csv.value = "";
-    fileName.value = "";
-    selectedKeys.value = [];
-    hideIds.value = [];
-}
-
-async function apply() {
-    applying.value = true;
+async function applyLedger() {
+    ledgerImport.applying = true;
     try {
-        const result = await api.applyFinances(csv.value, selectedKeys.value, hideIds.value);
+        const result = await api.applyFinances(ledgerImport.csv, ledgerImport.selected, ledgerImport.hidden);
         notify(`Added ${result.added}, updated ${result.updated}, hid ${result.hidden}.`);
-        reset();
+        resetLedger();
         await load();
     } catch (failure) {
         notify(errorMessage(failure, "Could not apply the import."), "error");
     } finally {
-        applying.value = false;
+        ledgerImport.applying = false;
     }
+}
+
+function resetLedger() {
+    ledgerPreview.value = null;
+    Object.assign(ledgerImport, emptyImport());
+}
+
+async function previewDonations(event: Event) {
+    if (!(await readFile(event, donationImport))) {
+        return;
+    }
+    donationImport.loading = true;
+    try {
+        donationPreview.value = await api.previewDonations(donationImport.csv);
+        donationImport.selected = donationRows.value.filter((row) => row.status !== "Unchanged").map((row) => row.key);
+        donationImport.hidden = [];
+    } catch (failure) {
+        notify(errorMessage(failure, `Could not read ${donationImport.fileName}.`), "error");
+        resetDonations();
+    } finally {
+        donationImport.loading = false;
+    }
+}
+
+async function applyDonations() {
+    donationImport.applying = true;
+    try {
+        const result = await api.applyDonations(donationImport.csv, donationImport.selected, donationImport.hidden);
+        notify(`Added ${result.added}, updated ${result.updated}, hid ${result.hidden}.`);
+        resetDonations();
+        await load();
+    } catch (failure) {
+        notify(errorMessage(failure, "Could not apply the import."), "error");
+    } finally {
+        donationImport.applying = false;
+    }
+}
+
+function resetDonations() {
+    donationPreview.value = null;
+    Object.assign(donationImport, emptyImport());
 }
 
 async function setHidden(transaction: FinanceTransaction, hidden: boolean) {
     try {
         data.value = await api.hideFinance(transaction.id, hidden);
-        notify(hidden ? "Hidden from the public page." : "Back on the public page.");
+    } catch (failure) {
+        notify(errorMessage(failure, "Could not update it."), "error");
+    }
+}
+
+async function setDonationHidden(donation: AdminDonation, hidden: boolean) {
+    try {
+        data.value = await api.hideDonation(donation.id, hidden);
+    } catch (failure) {
+        notify(errorMessage(failure, "Could not update it."), "error");
+    }
+}
+
+async function setNamed(donation: AdminDonation, named: boolean) {
+    try {
+        data.value = await api.setDonationNamed(donation.id, named);
     } catch (failure) {
         notify(errorMessage(failure, "Could not update it."), "error");
     }
