@@ -53,6 +53,7 @@ public class ModerationLog(
 
         if (!Options.AnnounceConfigured)
         {
+            logger.LogWarning("Moderation:AnnounceChannelId is not set, so moderation action {ModerationActionId} was not announced", action.Id);
             return;
         }
 

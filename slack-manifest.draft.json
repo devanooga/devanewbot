@@ -97,6 +97,7 @@
             "bot": [
                 "channels:read",
                 "chat:write",
+                "chat:write.public",
                 "chat:write.customize",
                 "commands",
                 "emoji:read",

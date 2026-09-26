@@ -8,6 +8,7 @@ using devanewbot.Api.v0.Models.Admin;
 using devanewbot.Data;
 using devanewbot.Models;
 using devanewbot.Seeders;
+using devanewbot.Services;
 using devanewbot.Services.Ham;
 using Hangfire;
 using Hangfire.Storage;
@@ -23,6 +24,7 @@ public partial class AdminController(
     HamFeedStatus feeds,
     HamWatchService watchList,
     IOptions<HamAlertOptions> hamAlertOptions,
+    IOptions<ModerationOptions> moderationOptions,
     JobStorage jobStorage) : ControllerBase
 {
     [GeneratedRegex("^[A-Z0-9]{3,12}$")]
@@ -235,9 +237,14 @@ public partial class AdminController(
     }
 
     private string[] Problems() =>
-        hamAlertOptions.Value.ChannelConfigured
-            ? []
-            : ["HamAlert:ChannelId is not set, so sessions are tracked but never announced in Slack."];
+    [
+        .. hamAlertOptions.Value.ChannelConfigured
+            ? Array.Empty<string>()
+            : ["HamAlert:ChannelId is not set, so sessions are tracked but never announced in Slack."],
+        .. moderationOptions.Value.AnnounceConfigured
+            ? Array.Empty<string>()
+            : ["Moderation:AnnounceChannelId is not set, so moderation actions are logged but never announced in Slack."],
+    ];
 
     private async Task<object> Watches() =>
         await Db.HamWatches
