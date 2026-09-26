@@ -3,12 +3,15 @@
         <v-col cols="12" md="6" lg="5">
             <v-card border>
                 <v-card-item>
-                    <v-card-title class="text-body-1">Change your password</v-card-title>
+                    <v-card-title class="text-body-1">
+                        {{ hasPassword ? "Change your password" : "Set a password" }}
+                    </v-card-title>
                     <v-card-subtitle>{{ user?.email }}</v-card-subtitle>
                 </v-card-item>
 
                 <v-card-text class="d-flex flex-column ga-4">
                     <v-text-field
+                        v-if="hasPassword"
                         v-model="currentPassword"
                         label="Current password"
                         type="password"
@@ -32,7 +35,7 @@
                 <v-card-actions class="px-4 pb-4">
                     <v-spacer />
                     <v-btn color="primary" :loading="busy" :disabled="mismatch" @click="submit">
-                        Change password
+                        {{ hasPassword ? "Change password" : "Set password" }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -78,6 +81,7 @@ const slackOutcomes: Record<string, [string, "success" | "error"]> = {
 };
 
 const slackAvailable = ref(false);
+const hasPassword = computed(() => user.value?.hasPassword ?? true);
 
 const currentPassword = ref("");
 const newPassword = ref("");
@@ -115,7 +119,8 @@ async function submit() {
     busy.value = true;
     try {
         await api.changePassword(currentPassword.value, newPassword.value);
-        notify("Password changed.");
+        notify(hasPassword.value ? "Password changed." : "Password set.");
+        update(await api.me());
         currentPassword.value = "";
         newPassword.value = "";
         confirmPassword.value = "";

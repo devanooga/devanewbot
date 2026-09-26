@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using devanewbot.Api.v0.Models.Auth;
 using devanewbot.Data.Models;
+using devanewbot.Seeders;
 using devanewbot.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -84,7 +85,7 @@ public class AuthController(
         {
             if (owner is null && identity.VerifiedEmail is not null)
             {
-                owner = await UserManager.FindByEmailAsync(identity.VerifiedEmail);
+                owner = await UserManager.FindByEmailAsync(identity.VerifiedEmail) ?? await CreateFromSlack(identity.VerifiedEmail);
                 if (owner is not null)
                 {
                     await RemoveSlackLogins(owner);
@@ -163,7 +164,9 @@ public class AuthController(
             return Unauthorized();
         }
 
-        var result = await UserManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        var result = await UserManager.HasPasswordAsync(user)
+            ? await UserManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword)
+            : await UserManager.AddPasswordAsync(user, model.NewPassword);
         if (!result.Succeeded)
         {
             return BadRequest(new { Errors = result.Errors.Select(error => error.Description) });
@@ -190,8 +193,21 @@ public class AuthController(
         {
             user.Email,
             Roles = await UserManager.GetRolesAsync(user),
+            HasPassword = await UserManager.HasPasswordAsync(user),
             Slack = slack is null ? null : new { UserId = slack.ProviderKey, Name = slack.ProviderDisplayName },
         });
+    }
+
+    private async Task<User?> CreateFromSlack(string email)
+    {
+        var user = new User { UserName = email, Email = email, EmailConfirmed = true };
+        if (!(await UserManager.CreateAsync(user)).Succeeded)
+        {
+            return null;
+        }
+
+        await UserManager.AddToRoleAsync(user, RoleSeeder.Administrators);
+        return user;
     }
 
     private async Task RemoveSlackLogins(User user)

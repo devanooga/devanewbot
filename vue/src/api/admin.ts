@@ -3,6 +3,7 @@ import axios from "axios";
 export interface CurrentUser {
     email: string;
     roles: string[];
+    hasPassword: boolean;
     slack: { userId: string; name: string | null } | null;
 }
 
