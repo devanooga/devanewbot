@@ -144,7 +144,8 @@
                 <CategoryBars :items="byDonor" series="in" />
                 <p class="rule muted">
                     Donors are named for a one-time gift over $50, more than $600 in a year, or on request, per our
-                    <a href="https://www.devanooga.com/code-of-conduct/#privacy-donations">code of conduct</a>.
+                    <a href="https://www.devanooga.com/code-of-conduct/#privacy-donations">code of conduct</a>. Once
+                    named, all of a donor's gifts are listed under their name.
                 </p>
             </section>
 

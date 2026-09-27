@@ -89,7 +89,7 @@
                         Upload a Donorbox donations export, or the direct-donations file for gifts that didn't go through
                         Donorbox (Id, Date, Donor, Amount, Type as Direct or In-kind, Public, Note). Emails, addresses and
                         card details are never stored. The public page names donors for a one-time gift over $50, more
-                        than $600 in a year, or when Public is yes.
+                        than $600 in a year, or when Public is yes, and then names all of that donor's gifts.
                     </p>
                     <v-btn color="primary" prepend-icon="mdi-file-delimited" :loading="donationImport.loading" @click="donationPicker?.click()">
                         Choose CSV
