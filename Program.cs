@@ -218,7 +218,7 @@ app
     .UseEndpoints(endpoints =>
     {
         endpoints.MapControllers();
-        endpoints.MapFallbackToFile("index.html");
+        endpoints.MapFallback(SpaPageMeta.ServeIndex);
     });
 
 // This is literally the worst thing I've done with this project, even worse than just running perl inline

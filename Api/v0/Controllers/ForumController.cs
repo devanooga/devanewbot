@@ -52,7 +52,7 @@ public class ForumController : Controller
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = channel,
-            Text = $"{Link.Url(model.Data.ViewUrl, model.Data.Title)}",
+            Text = model.Data.ViewUrl,
             Username = $"Forums - {model.Data.Username}",
             IconUrl = model.Data.User.AvatarUrls.H,
             UnfurlLinks = true,
@@ -93,13 +93,12 @@ public class ForumController : Controller
         }
 
         var channel = await ResolveChannel(forumTitle);
-        var threadTitle = model.Data.Thread.Title;
         var postUrl = model.Data.ViewUrl ?? model.Data.Thread.ViewUrl;
 
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = channel,
-            Text = $"{model.Data.Username} replied to {Link.Url(postUrl, threadTitle)}",
+            Text = $"{model.Data.Username} replied: {postUrl}",
             Username = $"Forums - {model.Data.Username}",
             IconUrl = model.Data.User?.AvatarUrls?.H,
             UnfurlLinks = true,
