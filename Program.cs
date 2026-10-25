@@ -24,9 +24,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using RollbarDotNet.Configuration;
-using RollbarDotNet.Core;
-using RollbarDotNet.Logger;
 using RoushTech.Asio;
 using SlackDotNet;
 using SlackNet.AspNetCore;
@@ -78,7 +75,8 @@ builder.Services
         c
             .UseSigningSecret(configuration.GetSection("Slack").GetValue<string>("VerificationToken")!)
             .UseApiToken(configuration.GetSection("Slack").GetValue<string>("OauthToken"))
-            .UseAppLevelToken(configuration.GetSection("SlackSocket").GetValue<string>("AppToken"));
+            .UseAppLevelToken(configuration.GetSection("SlackSocket").GetValue<string>("AppToken"))
+            .UseSocketMode(true);
 
         c
             .RegisterSlashCommandHandler<SpongebobCommand>("/spongebob" + suffix)
@@ -106,7 +104,6 @@ builder.Services
             .RegisterViewSubmissionHandler<ModLogCommand>(ModLogCommand.ModalCallbackId)
             .RegisterEventHandler<MemberJoinedChannel, MemberJoinedChannelHandler>();
     })
-    .Configure<RollbarOptions>(options => configuration.GetSection("Rollbar").Bind(options))
     .Configure<DiscordOptions>(o => configuration.GetSection("Discord").Bind(o))
     .Configure<SlackOptions>(o => configuration.GetSection("Slack").Bind(o))
     .Configure<HamAlertOptions>(o => configuration.GetSection("HamAlert").Bind(o))
@@ -120,7 +117,6 @@ builder.Services
             ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
         options.ForwardLimit = 3; // CDN + Load balancer
     })
-    .AddRollbarWeb()
     .AddAsioAppLog(options =>
     {
         options.RingCapacity = 2000;
@@ -181,12 +177,8 @@ var app = builder.Build();
     }
 }
 
-var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
-loggerFactory.AddRollbarDotNetLogger(app.Services);
 app
-    .UseSlackNet(c =>
-        c.UseSocketMode(true)
-    )
+    .UseSlackNet()
     .UseForwardedHeaders()
     .UseHsts()
     .UseHttpsRedirection()
@@ -206,7 +198,6 @@ app
             }
         }
     })
-    .UseRollbarExceptionHandler()
     .UseRouting()
     .UseAuthentication()
     .UseAuthorization()

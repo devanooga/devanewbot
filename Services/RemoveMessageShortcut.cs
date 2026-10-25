@@ -18,12 +18,12 @@ public class RemoveMessageShortcut(
 
     public async Task Handle(MessageShortcut request)
     {
-        await client.Views.Open(request.TriggerId, new ModalViewDefinition
+        await client.Views.Open(new ModalViewDefinition
         {
             Title = "Remove messages",
             Blocks = { new SectionBlock { Text = new Markdown(await Body(request)) } },
             Close = "Close"
-        });
+        }, triggerId: request.TriggerId);
     }
 
     private async Task<string> Body(MessageShortcut request)

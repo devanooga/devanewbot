@@ -24,7 +24,7 @@ public class ModLogCommand(
             return Reply("You do not have permission to use this command.");
         }
 
-        await client.Views.Open(command.TriggerId, new ModalViewDefinition
+        await client.Views.Open(new ModalViewDefinition
         {
             Title = "Log moderation action",
             CallbackId = ModalCallbackId,
@@ -45,7 +45,7 @@ public class ModLogCommand(
             },
             Submit = "Log it",
             Close = "Cancel"
-        });
+        }, triggerId: command.TriggerId);
 
         return Reply("Complete the form to log a moderation action.");
     }

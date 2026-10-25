@@ -28,7 +28,7 @@ public class DeactivateCommand(
             return Reply("You do not have permission to use this command.");
         }
 
-        await client.Views.Open(command.TriggerId, new ModalViewDefinition
+        await client.Views.Open(new ModalViewDefinition
         {
             Title = "Deactivate account",
             CallbackId = ModalCallbackId,
@@ -50,7 +50,7 @@ public class DeactivateCommand(
             },
             Submit = "Deactivate",
             Close = "Cancel"
-        });
+        }, triggerId: command.TriggerId);
 
         return Reply("Complete the form to deactivate an account.");
     }

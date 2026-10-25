@@ -30,7 +30,7 @@ public class RemoveBanCommand(ISlackApiClient client) : ISlashCommandHandler
             };
         }
 
-        await client.Views.Open(command.TriggerId, new ModalViewDefinition
+        await client.Views.Open(new ModalViewDefinition
         {
             Title = "Create Channel Ban",
             CallbackId = RemoveBanModalHandler.ModalCallbackId,
@@ -50,7 +50,7 @@ public class RemoveBanCommand(ISlackApiClient client) : ISlashCommandHandler
             Close = "Cancel",
             NotifyOnClose = false,
             PrivateMetadata = JsonSerializer.Serialize(new ChannelBanMetadata(command.ChannelId))
-        });
+        }, triggerId: command.TriggerId);
 
         return new SlashCommandResponse
         {
