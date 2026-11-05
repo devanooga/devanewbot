@@ -254,7 +254,7 @@ public class InviteService(
         BlockActionRequest? request = null,
         string? decidedBySlackUserId = null)
     {
-        if (invite.Status != InviteStatus.Pending)
+        if (invite.Status is not (InviteStatus.Pending or InviteStatus.Failed))
         {
             throw new InvalidOperationException($"{invite.Email} was already {Describe(invite.Status)} by {invite.DecidedBy} on {invite.DecidedAt:yyyy-MM-dd HH:mm} UTC.");
         }
@@ -273,6 +273,7 @@ public class InviteService(
             if (success)
             {
                 invite.Status = InviteStatus.Approved;
+                invite.Error = null;
                 text = $"Invite approved for {invite.Email} from {location} by {decidedBy}";
             }
             else if (error == "already_in_team" || error == "already_in_team_invited_user")

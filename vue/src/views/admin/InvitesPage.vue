@@ -85,7 +85,7 @@
             </template>
             <template #[`item.actions`]="{ item }">
                 <div class="d-flex ga-1 justify-end">
-                    <template v-if="item.status === 'Pending'">
+                    <template v-if="item.status === 'Pending' || item.status === 'Failed'">
                         <v-btn
                             size="small"
                             color="success"
