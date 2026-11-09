@@ -94,11 +94,12 @@ public class ForumController : Controller
 
         var channel = await ResolveChannel(forumTitle);
         var postUrl = model.Data.ViewUrl ?? model.Data.Thread.ViewUrl;
+        var linkText = EscapeSlackText(model.Data.Thread?.Title ?? postUrl);
 
         await SlackApiClient.Chat.PostMessage(new Message
         {
             Channel = channel,
-            Text = $"{model.Data.Username} replied: {postUrl}",
+            Text = $"{model.Data.Username} replied to <{postUrl}|{linkText}>",
             Username = $"Forums - {model.Data.Username}",
             IconUrl = model.Data.User?.AvatarUrls?.H,
             UnfurlLinks = true,
@@ -108,6 +109,9 @@ public class ForumController : Controller
         _cache.Set(cacheKey, true, ReplyCooldown);
         return Ok();
     }
+
+    private static string EscapeSlackText(string text) =>
+        text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
 
     private async Task<string> ResolveChannel(string forumTitle)
     {
